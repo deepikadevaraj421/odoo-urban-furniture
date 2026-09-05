@@ -32,6 +32,7 @@ export const ROUTES = {
   CUSTOMER_MANAGEMENT: '/admin/customers',
   CUSTOMER_INVOICES: '/customer/invoices',
   CUSTOMER_PAYMENTS: '/customer/payments',
+  CUSTOMER_ORDERS: '/customer/orders',
   CUSTOMER_PROFILE: '/customer/profile',
 };
 

@@ -17,7 +17,9 @@ import PurchaseAccountantDashboard from '../features/accountant/pages/PurchaseAc
 import CustomerManagement from '../features/admin/pages/CustomerManagement';
 import CustomerDashboard from '../features/customer/pages/CustomerDashboard';
 import CustomerInvoices from '../features/customer/pages/CustomerInvoices';
+import CustomerInvoiceDetail from '../features/customer/pages/CustomerInvoiceDetail';
 import CustomerPayments from '../features/customer/pages/CustomerPayments';
+import CustomerOrders from '../features/customer/pages/CustomerOrders';
 import CustomerProfile from '../features/customer/pages/CustomerProfile';
 
 const AppRoutes = () => {
@@ -125,6 +127,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
             <CustomerProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.CUSTOMER_ORDERS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+            <CustomerOrders />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/invoices/:id"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+            <CustomerInvoiceDetail />
           </ProtectedRoute>
         }
       />

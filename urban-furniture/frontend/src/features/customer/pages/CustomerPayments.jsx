@@ -1,108 +1,108 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../../../components/layout/Header';
-import { customerApi } from '../../../services/authApi';
-import { ROUTES } from '../../../utils/constants';
+import { useState, useEffect, useCallback } from 'react';
+import '../customer.css';
+import { CustomerSidebar, CustomerHeader } from '../components/CustomerNav';
+import { SkeletonTable, StatusBadge, EmptyState } from '../components/CustomerUI';
+import customerApi from '../../../services/customerApi';
+
+const MOCK_PAYMENTS = [
+  { id: '1', paymentNumber: 'PAY-0001', invoice: { invoiceNumber: 'INV-1024' }, paidAt: '2026-09-05', amount: 25000, method: 'BANK', status: 'COMPLETED', referenceNumber: 'TXN9821234' },
+  { id: '2', paymentNumber: 'PAY-0002', invoice: { invoiceNumber: 'INV-0993' }, paidAt: '2026-08-05', amount: 18500, method: 'ONLINE', status: 'COMPLETED', referenceNumber: 'UPI8823' },
+  { id: '3', paymentNumber: 'PAY-0003', invoice: { invoiceNumber: 'INV-0612' }, paidAt: '2026-07-15', amount: 10000, method: 'CASH', status: 'COMPLETED', referenceNumber: null },
+];
+
+const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const THEME_KEY = 'cp_theme';
+const METHOD_OPTIONS = ['', 'CASH', 'BANK', 'ONLINE', 'EMI'];
 
 const CustomerPayments = () => {
-  const navigate = useNavigate();
-  const [paymentsData, setPaymentsData] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'light');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [methodFilter, setMethodFilter] = useState('');
+  const [demoMode, setDemoMode] = useState(false);
 
-  useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        const res = await customerApi.getPayments();
-        setPaymentsData(res.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load payments.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next); localStorage.setItem(THEME_KEY, next);
+  };
 
-    fetchPayments();
-  }, []);
+  const fetchPayments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await customerApi.getPayments({ method: methodFilter || undefined });
+      setPayments(res.data.payments || []);
+      setDemoMode(false);
+    } catch {
+      let filtered = MOCK_PAYMENTS;
+      if (methodFilter) filtered = filtered.filter(p => p.method === methodFilter);
+      setPayments(filtered);
+      setDemoMode(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [methodFilter]);
+
+  useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
   return (
-    <div className="dashboard-layout">
-      <Header title="Urban Furniture ERP" subtitle="Customer Portal — My Payments" />
+    <div className={`cp-root ${theme === 'dark' ? 'cp-dark' : ''}`}>
+      <div className="cp-layout">
+        <CustomerSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="cp-main">
+          <CustomerHeader onToggleSidebar={() => setSidebarOpen(p => !p)} theme={theme} onToggleTheme={toggleTheme} />
+          <main className="cp-page" id="cp-payments-page">
+            <div className="cp-page-header"><h1 className="cp-page-title">My Payments</h1></div>
 
-      <main className="dashboard-main">
-        <div className="flex-between mb-4">
-          <div>
-            <h2>My Payments</h2>
-            <p className="text-muted" style={{ fontSize: '0.875rem' }}>
-              Showing payment transactions for Customer ID:{' '}
-              <strong style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>
-                {paymentsData?.customerCode}
-              </strong>
-            </p>
-          </div>
-          <button onClick={() => navigate(ROUTES.CUSTOMER_DASHBOARD)} className="btn btn-outline">
-            ← Back to Dashboard
-          </button>
-        </div>
+            {demoMode && (
+              <div style={{ background: '#fef3cd', border: '1px solid #f0c040', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: '0.82rem', color: '#92650a' }}>
+                🎭 <strong>Demo Mode</strong> — Showing sample data. Connect PostgreSQL to see live data.
+              </div>
+            )}
 
-        {error && <div className="alert alert-error mb-4">{error}</div>}
-
-        <div className="table-container card" style={{ padding: 0 }}>
-          {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Loading payments...
+            <div className="cp-filter-row">
+              <select className="cp-filter-select" value={methodFilter} onChange={e => setMethodFilter(e.target.value)} aria-label="Filter by payment method" id="cp-method-filter">
+                {METHOD_OPTIONS.map(m => <option key={m} value={m}>{m || 'All Methods'}</option>)}
+              </select>
             </div>
-          ) : !paymentsData?.payments || paymentsData.payments.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">💳</div>
-              <h3>No payment records found</h3>
-              <p>No payment receipts or transaction records exist for your customer account.</p>
+
+            <div className="cp-section-card">
+              {loading ? <SkeletonTable rows={6} /> : payments.length === 0 ? (
+                <EmptyState icon="💳" title="No payments yet" sub="Your payment history will appear here once you make a payment." />
+              ) : (
+                <div className="cp-table-wrap">
+                  <table className="cp-table" aria-label="Payments table">
+                    <thead>
+                      <tr><th>Payment ID</th><th>Invoice</th><th>Date</th><th>Amount</th><th>Method</th><th>Status</th><th>Reference</th></tr>
+                    </thead>
+                    <tbody>
+                      {payments.map(p => (
+                        <tr key={p.id}>
+                          <td style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 600 }}>{p.paymentNumber}</td>
+                          <td style={{ fontWeight: 500 }}>{p.invoice?.invoiceNumber || '—'}</td>
+                          <td>{fmtDate(p.paidAt)}</td>
+                          <td style={{ fontWeight: 700, color: 'var(--cp-green)' }}>{fmt(p.amount)}</td>
+                          <td><StatusBadge status={p.method} /></td>
+                          <td><StatusBadge status={p.status} /></td>
+                          <td style={{ color: 'var(--cp-text-muted)', fontSize: '0.82rem' }}>{p.referenceNumber || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          ) : (
-            <table className="table-custom">
-              <thead>
-                <tr>
-                  <th>Payment #</th>
-                  <th>Invoice #</th>
-                  <th>Customer ID</th>
-                  <th>Date</th>
-                  <th>Method</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paymentsData.payments.map((pay) => (
-                  <tr key={pay.id}>
-                    <td>
-                      <span style={{ fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
-                        {pay.paymentNumber}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'monospace' }}>{pay.invoiceNumber}</span>
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{pay.customerCode}</span>
-                    </td>
-                    <td style={{ color: 'var(--text-muted)' }}>{pay.date}</td>
-                    <td>{pay.paymentMethod}</td>
-                    <td style={{ fontWeight: 700, color: 'var(--accent-secondary)' }}>
-                      ₹{pay.amount.toLocaleString('en-IN')}
-                    </td>
-                    <td>
-                      <span className="badge badge-success">{pay.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          </main>
+          <footer className="cp-footer">
+            <span>© 2025 Urban Furniture. All rights reserved.</span>
+            <div className="cp-footer-links"><span className="cp-footer-link">Privacy</span><span className="cp-footer-link">Terms</span><span className="cp-footer-link">Support</span></div>
+          </footer>
         </div>
-      </main>
+        <button className="cp-sidebar-toggle" onClick={() => setSidebarOpen(p => !p)} aria-label="Open navigation" id="cp-mobile-menu-payments" style={{ display: 'flex' }}>☰</button>
+      </div>
     </div>
   );
 };
 
 export default CustomerPayments;
-

@@ -1,158 +1,171 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../../../components/layout/Header';
-import { customerApi } from '../../../services/authApi';
+import { useState, useEffect, useCallback } from 'react';
+import '../customer.css';
+import { CustomerSidebar, CustomerHeader } from '../components/CustomerNav';
+import customerApi from '../../../services/customerApi';
+import { useAuth } from '../../../context/AuthContext';
 import { ROUTES } from '../../../utils/constants';
+import { useNavigate } from 'react-router-dom';
+
+const MOCK_PROFILE = { name: 'Deepika D', customerCode: 'CUST-00028', email: 'deepikadevaraj413@gmail.com', mobile: '9876543210', address: '12, MG Road, Chennai - 600001', status: 'ACTIVE' };
+
+const THEME_KEY = 'cp_theme';
 
 const CustomerProfile = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'light');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [mobile, setMobile] = useState('');
+  const [address, setAddress] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [demoMode, setDemoMode] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await customerApi.getProfile();
-        setProfile(res.data.customer);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load profile.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next); localStorage.setItem(THEME_KEY, next);
+  };
 
-    fetchProfile();
-  }, []);
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await customerApi.getProfile();
+      const c = res.data.customer;
+      setProfile(c);
+      setMobile(c.mobile || '');
+      setAddress(c.address || '');
+      setDemoMode(false);
+    } catch {
+      const mock = { ...MOCK_PROFILE, email: user?.email || MOCK_PROFILE.email, name: user?.name || MOCK_PROFILE.name };
+      setProfile(mock);
+      setMobile(mock.mobile);
+      setAddress(mock.address);
+      setDemoMode(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+
+  const handleSave = async () => {
+    if (demoMode) { setEditing(false); setSuccessMsg('Profile updated! (Demo mode — changes not persisted)'); setTimeout(() => setSuccessMsg(''), 4000); return; }
+    setSaving(true);
+    setError('');
+    try {
+      await customerApi.updateProfile({ mobile, address });
+      setSuccessMsg('Profile updated successfully!');
+      setEditing(false);
+      fetchProfile();
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to update profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getInitials = (name = '') => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="dashboard-layout">
-      <Header title="Urban Furniture ERP" subtitle="Customer Portal — My Profile" />
+    <div className={`cp-root ${theme === 'dark' ? 'cp-dark' : ''}`}>
+      <div className="cp-layout">
+        <CustomerSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="cp-main">
+          <CustomerHeader onToggleSidebar={() => setSidebarOpen(p => !p)} theme={theme} onToggleTheme={toggleTheme} />
+          <main className="cp-page" id="cp-profile-page">
+            <div className="cp-page-header"><h1 className="cp-page-title">My Profile</h1></div>
 
-      <main className="dashboard-main">
-        <div className="flex-between mb-4">
-          <div>
-            <h2>Customer Profile</h2>
-            <p className="text-muted" style={{ fontSize: '0.875rem' }}>
-              Permanent reference identity details
-            </p>
-          </div>
-          <button onClick={() => navigate(ROUTES.CUSTOMER_DASHBOARD)} className="btn btn-outline">
-            ← Back to Dashboard
-          </button>
+            {demoMode && (
+              <div style={{ background: '#fef3cd', border: '1px solid #f0c040', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: '0.82rem', color: '#92650a' }}>
+                🎭 <strong>Demo Mode</strong> — Showing sample data. Connect PostgreSQL to see live data.
+              </div>
+            )}
+            {error && <div className="cp-error-box">⚠️ {error}</div>}
+            {successMsg && <div className="cp-alert success">✅ {successMsg}</div>}
+
+            {loading ? (
+              <div className="cp-section-card" style={{ padding: 24 }}>
+                {[1,2,3,4].map(i => <div key={i} className="cp-skeleton" style={{ height: 40, marginBottom: 16, borderRadius: 8 }} />)}
+              </div>
+            ) : profile && (
+              <div className="cp-section-card" style={{ maxWidth: 640 }}>
+                <div className="cp-section-header">
+                  <h2 className="cp-section-title">Personal Information</h2>
+                  {!editing ? (
+                    <button className="cp-edit-btn" onClick={() => setEditing(true)} id="cp-profile-edit-btn">✏️ Edit Profile</button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="cp-btn cp-btn-outline" onClick={() => { setEditing(false); setMobile(profile.mobile || ''); setAddress(profile.address || ''); }} style={{ padding: '4px 12px', fontSize: '0.8rem' }} id="cp-cancel-edit-btn">Cancel</button>
+                      <button className="cp-btn cp-btn-primary" onClick={handleSave} disabled={saving} style={{ padding: '4px 12px', fontSize: '0.8rem' }} id="cp-save-profile-btn">{saving ? 'Saving...' : '💾 Save'}</button>
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding: 24 }}>
+                  {/* Avatar */}
+                  <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 28 }}>
+                    <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, #52b788, #2d6a4f)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', fontWeight: 800, color: 'white', fontFamily: 'Outfit, sans-serif' }}>
+                      {getInitials(profile.name)}
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.3rem', color: 'var(--cp-text-primary)', marginBottom: 4 }}>{profile.name}</div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--cp-green)' }}>{profile.customerCode}</div>
+                      <span style={{ background: 'var(--cp-green-pale)', color: 'var(--cp-green)', padding: '2px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 600, display: 'inline-block', marginTop: 6 }}>{profile.status}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {[{ label: 'Full Name', val: profile.name }, { label: 'Email Address', val: profile.email || user?.email }, { label: 'Customer ID', val: profile.customerCode }].map(({ label, val }) => (
+                      <div key={label} className="cp-form-group" style={{ marginBottom: 0 }}>
+                        <label className="cp-form-label">{label}</label>
+                        <div style={{ padding: '10px 14px', background: 'var(--cp-bg)', border: '1px solid var(--cp-border)', borderRadius: 8, fontSize: '0.9rem', color: 'var(--cp-text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {val} <span style={{ fontSize: '0.65rem', marginLeft: 'auto' }}>🔒 Read-only</span>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="cp-form-group" style={{ marginBottom: 0 }}>
+                      <label className="cp-form-label" htmlFor="cp-profile-mobile">Mobile Number</label>
+                      {editing ? (
+                        <input id="cp-profile-mobile" type="tel" className="cp-form-input" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="Enter mobile number" />
+                      ) : (
+                        <div style={{ padding: '10px 14px', background: 'var(--cp-bg)', border: '1px solid var(--cp-border)', borderRadius: 8, fontSize: '0.9rem', color: 'var(--cp-text-secondary)' }}>{profile.mobile || '—'}</div>
+                      )}
+                    </div>
+
+                    <div className="cp-form-group" style={{ marginBottom: 0 }}>
+                      <label className="cp-form-label" htmlFor="cp-profile-address">Address</label>
+                      {editing ? (
+                        <input id="cp-profile-address" type="text" className="cp-form-input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Enter address" />
+                      ) : (
+                        <div style={{ padding: '10px 14px', background: 'var(--cp-bg)', border: '1px solid var(--cp-border)', borderRadius: 8, fontSize: '0.9rem', color: 'var(--cp-text-secondary)' }}>{profile.address || '—'}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {!editing && (
+                    <div style={{ marginTop: 20, padding: '12px 14px', background: 'var(--cp-amber-pale)', border: '1px solid rgba(212,132,10,0.2)', borderRadius: 8, fontSize: '0.8rem', color: 'var(--cp-amber)' }}>
+                      💡 You can edit your mobile number and address. Name, email, and Customer ID are managed by Urban Furniture administration.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </main>
+          <footer className="cp-footer">
+            <span>© 2025 Urban Furniture. All rights reserved.</span>
+            <div className="cp-footer-links"><span className="cp-footer-link">Privacy</span><span className="cp-footer-link">Terms</span><span className="cp-footer-link">Support</span></div>
+          </footer>
         </div>
-
-        {error && <div className="alert alert-error mb-4">{error}</div>}
-
-        {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Loading profile...
-          </div>
-        ) : profile && (
-          <div className="card" style={{ maxWidth: '640px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1.25rem',
-                marginBottom: '1.75rem',
-                paddingBottom: '1.25rem',
-                borderBottom: '1px solid var(--border-color)'
-              }}
-            >
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '50%',
-                  background: 'var(--accent)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.75rem',
-                  fontWeight: '700'
-                }}
-              >
-                {profile.name?.charAt(0).toUpperCase() || 'C'}
-              </div>
-              <div>
-                <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', fontWeight: 700 }}>
-                  {profile.name}
-                </h3>
-                <span className="badge badge-success">
-                  {profile.status} CUSTOMER
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gap: '1.25rem' }}>
-              <div
-                style={{
-                  background: 'var(--bg-secondary)',
-                  padding: '1rem 1.25rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)'
-                }}
-              >
-                <span
-                  style={{
-                    color: 'var(--accent)',
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontWeight: '700'
-                  }}
-                >
-                  Permanent Customer ID
-                </span>
-                <p
-                  style={{
-                    fontSize: '1.4rem',
-                    fontWeight: '800',
-                    fontFamily: 'monospace',
-                    margin: '0.25rem 0 0 0',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  {profile.customerCode}
-                </p>
-              </div>
-
-              <div>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Registered Email Address</span>
-                <p style={{ fontWeight: 600, fontSize: '1.05rem', margin: '0.25rem 0 0 0', color: 'var(--text-primary)' }}>
-                  {profile.email}
-                </p>
-              </div>
-
-              <div>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Mobile Number</span>
-                <p style={{ fontWeight: 600, fontSize: '1.05rem', margin: '0.25rem 0 0 0', color: 'var(--text-primary)' }}>
-                  {profile.mobile || 'Not provided'}
-                </p>
-              </div>
-
-              <div>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Showroom Address</span>
-                <p style={{ fontWeight: 600, fontSize: '1.05rem', margin: '0.25rem 0 0 0', color: 'var(--text-primary)' }}>
-                  {profile.address || 'Not provided'}
-                </p>
-              </div>
-
-              <div>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Account Created On</span>
-                <p style={{ fontWeight: 600, fontSize: '1.05rem', margin: '0.25rem 0 0 0', color: 'var(--text-primary)' }}>
-                  {new Date(profile.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
+        <button className="cp-sidebar-toggle" onClick={() => setSidebarOpen(p => !p)} aria-label="Open navigation" id="cp-mobile-menu-profile" style={{ display: 'flex' }}>☰</button>
+      </div>
     </div>
   );
 };
 
 export default CustomerProfile;
-
