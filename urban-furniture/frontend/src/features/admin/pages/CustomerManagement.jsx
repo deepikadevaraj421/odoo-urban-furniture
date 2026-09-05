@@ -97,24 +97,36 @@ const CustomerManagement = () => {
   };
 
   return (
-    <div className="dashboard-container">
-      <Header title="Urban Furniture" subtitle="Customer Management" />
+    <div className="dashboard-layout">
+      <Header title="Urban Furniture ERP" subtitle="Customer Directory" />
 
-      <main className="dashboard-content">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+      <main className="dashboard-main">
+        <div className="flex-between mb-4">
           <div>
-            <h2 style={{ color: '#f3f4f6', margin: '0 0 4px 0' }}>Customer Directory</h2>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: '0.9rem' }}>Search and manage customer accounts by Customer ID, Name, Email, or Mobile</p>
+            <h2>Customer Directory</h2>
+            <p className="text-muted" style={{ fontSize: '0.875rem' }}>
+              Search and manage customer accounts by Customer ID, Name, Email, or Mobile
+            </p>
           </div>
-          <button onClick={() => setShowAddModal(true)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>+ Add New Customer</span>
+          <button onClick={() => setShowAddModal(true)} className="btn btn-primary">
+            + Add New Customer
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div style={{ background: '#111827', padding: '16px', borderRadius: '10px', border: '1px solid #1f2937', marginBottom: '24px' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label htmlFor="customer-search" style={{ color: '#9ca3af', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {/* Search Bar Card */}
+        <div className="card mb-4" style={{ padding: '1.25rem' }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label
+              htmlFor="customer-search"
+              style={{
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '0.5rem',
+                display: 'block'
+              }}
+            >
               🔍 Search Existing Customers
             </label>
             <input
@@ -122,78 +134,70 @@ const CustomerManagement = () => {
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search by Customer ID (e.g. CUS-00027), Name, Email, or Mobile..."
+              placeholder="Search by Customer ID (e.g. CUS-00005), Name, Email, or Mobile..."
               className="form-input"
-              style={{ background: '#1f2937', borderColor: '#374151', color: '#f3f4f6', fontSize: '1rem', padding: '12px 16px' }}
             />
           </div>
         </div>
 
-        {error && <div className="alert alert-error" style={{ marginBottom: '20px' }}>{error}</div>}
-        {actionSuccess && <div className="alert alert-success" style={{ marginBottom: '20px' }}>{actionSuccess}</div>}
+        {error && <div className="alert alert-error mb-4">{error}</div>}
+        {actionSuccess && <div className="alert alert-success mb-4">{actionSuccess}</div>}
 
-        {/* Customers Table */}
-        <div className="table-container" style={{ background: '#111827', borderRadius: '10px', border: '1px solid #1f2937', overflow: 'hidden' }}>
+        {/* Customers Table Container */}
+        <div className="table-container card" style={{ padding: 0 }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading customers...</div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Loading customers...
+            </div>
           ) : customers.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-              <p style={{ fontSize: '1.2rem', marginBottom: '8px' }}>No customer records found.</p>
-              <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
-                {searchQuery ? `No customer matched "${searchQuery}". Click "+ Add New Customer" to register.` : 'Click "+ Add New Customer" to register your first customer.'}
+            <div className="empty-state">
+              <div className="empty-icon">👥</div>
+              <h3>No customer records found</h3>
+              <p>
+                {searchQuery
+                  ? `No customer matched "${searchQuery}". Click "+ Add New Customer" to register.`
+                  : 'Click "+ Add New Customer" to register your first customer.'}
               </p>
             </div>
           ) : (
-            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className="table-custom">
               <thead>
-                <tr style={{ background: '#1f2937', color: '#9ca3af', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '14px 16px' }}>Customer ID</th>
-                  <th style={{ padding: '14px 16px' }}>Full Name</th>
-                  <th style={{ padding: '14px 16px' }}>Email Address</th>
-                  <th style={{ padding: '14px 16px' }}>Mobile</th>
-                  <th style={{ padding: '14px 16px' }}>Status</th>
-                  <th style={{ padding: '14px 16px' }}>Created Date</th>
-                  <th style={{ padding: '14px 16px' }}>Actions</th>
+                <tr>
+                  <th>Customer ID</th>
+                  <th>Full Name</th>
+                  <th>Email Address</th>
+                  <th>Mobile</th>
+                  <th>Status</th>
+                  <th>Created Date</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {customers.map((customer) => (
-                  <tr key={customer.id} style={{ borderBottom: '1px solid #1f2937', color: '#e5e7eb' }}>
-                    <td style={{ padding: '14px 16px', fontWeight: '700', color: '#00d4aa' }}>{customer.customerCode}</td>
-                    <td style={{ padding: '14px 16px', fontWeight: '600' }}>{customer.name}</td>
-                    <td style={{ padding: '14px 16px', color: '#9ca3af' }}>{customer.email}</td>
-                    <td style={{ padding: '14px 16px', color: '#d1d5db' }}>{customer.mobile}</td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span className={`badge ${customer.status === 'ACTIVE' ? 'badge-active' : 'badge-invited'}`} style={{
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        background: customer.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                        color: customer.status === 'ACTIVE' ? '#10b981' : '#f59e0b',
-                        border: `1px solid ${customer.status === 'ACTIVE' ? '#10b981' : '#f59e0b'}`,
-                      }}>
+                  <tr key={customer.id}>
+                    <td>
+                      <span style={{ fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace', fontSize: '0.95rem' }}>
+                        {customer.customerCode}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{customer.name}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{customer.email}</td>
+                    <td>{customer.mobile}</td>
+                    <td>
+                      <span className={`badge ${customer.status === 'ACTIVE' ? 'badge-success' : 'badge-warning'}`}>
                         {customer.status}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#9ca3af', fontSize: '0.85rem' }}>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={{ textAlign: 'right' }}>
                       {customer.status === 'INVITED' && (
                         <button
                           onClick={() => handleResendInvitation(customer.id)}
                           disabled={resendLoadingId === customer.id}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            background: '#374151',
-                            color: '#60a5fa',
-                            border: '1px solid #4b5563',
-                            cursor: 'pointer',
-                          }}
+                          className="btn btn-outline"
+                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
                         >
                           {resendLoadingId === customer.id ? 'Sending...' : '✉️ Resend Invitation'}
                         </button>
@@ -208,17 +212,28 @@ const CustomerManagement = () => {
 
         {/* Add Customer Modal */}
         {showAddModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-            <div className="auth-card" style={{ maxWidth: '500px', width: '100%', background: '#111827', border: '1px solid #1f2937' }}>
-              <div className="auth-header">
-                <h3 className="auth-title">Register New Customer</h3>
-                <p className="auth-subtitle">Customer ID will be generated automatically (e.g. CUS-00001)</p>
+          <div className="modal-backdrop">
+            <div className="modal-card">
+              <div className="flex-between mb-4">
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Register New Customer</h3>
+                  <p className="text-muted" style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+                    Customer ID will be generated automatically (e.g. CUS-00001)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                >
+                  ✕
+                </button>
               </div>
 
-              {modalError && <div className="alert alert-error">{modalError}</div>}
-              {modalSuccess && <div className="alert alert-success">{modalSuccess}</div>}
+              {modalError && <div className="alert alert-error mb-4">{modalError}</div>}
+              {modalSuccess && <div className="alert alert-success mb-4">{modalSuccess}</div>}
 
-              <form onSubmit={handleAddCustomerSubmit} className="auth-form">
+              <form onSubmit={handleAddCustomerSubmit}>
                 <div className="form-group">
                   <label htmlFor="cust-name">Full Name *</label>
                   <input
@@ -274,11 +289,21 @@ const CustomerManagement = () => {
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                  <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary" style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="btn btn-outline"
+                    style={{ flex: 1 }}
+                  >
                     Cancel
                   </button>
-                  <button type="submit" disabled={submitting} className="btn-primary" style={{ flex: 1 }}>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                  >
                     {submitting ? 'Creating...' : 'Register Customer'}
                   </button>
                 </div>
@@ -292,3 +317,4 @@ const CustomerManagement = () => {
 };
 
 export default CustomerManagement;
+

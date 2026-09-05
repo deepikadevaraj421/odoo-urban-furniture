@@ -16,15 +16,17 @@ const Unauthorized = () => {
   };
 
   return (
-    <div className="auth-page-container">
-      <div className="auth-card text-center">
-        <div className="unauthorized-icon">🚫</div>
-        <h2 className="auth-title">403 - Access Denied</h2>
-        <p className="auth-subtitle" style={{ marginBottom: '24px' }}>
-          You do not have permission to access this page or resource.
+    <div style={{ minHeight: 'calc(100vh - 72px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div className="card" style={{ maxWidth: '440px', width: '100%', textAlign: 'center', padding: '3rem 2rem' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '1rem', lineHeight: 1 }}>🛡️</div>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+          403 - Access Restricted
+        </h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: 1.6 }}>
+          You do not have permission to access this page. Please return to your designated portal.
         </p>
-        <button onClick={handleGoHome} className="btn-primary">
-          Back to Dashboard
+        <button onClick={handleGoHome} className="btn btn-primary" style={{ width: '100%' }}>
+          Return to Dashboard
         </button>
       </div>
     </div>
@@ -32,3 +34,4 @@ const Unauthorized = () => {
 };
 
 export default Unauthorized;
+

@@ -26,53 +26,68 @@ const CustomerInvoices = () => {
   }, []);
 
   return (
-    <div className="dashboard-container">
-      <Header title="Urban Furniture" subtitle="Customer Portal — My Invoices" />
+    <div className="dashboard-layout">
+      <Header title="Urban Furniture ERP" subtitle="Customer Portal — My Invoices" />
 
-      <main className="dashboard-content">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <main className="dashboard-main">
+        <div className="flex-between mb-4">
           <div>
-            <h2 style={{ color: '#f3f4f6', margin: '0 0 4px 0' }}>My Invoices</h2>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: '0.9rem' }}>
-              Showing billing records linked to Customer ID: <strong style={{ color: '#00d4aa' }}>{invoicesData?.customerCode}</strong>
+            <h2>My Invoices</h2>
+            <p className="text-muted" style={{ fontSize: '0.875rem' }}>
+              Showing billing records linked to Customer ID:{' '}
+              <strong style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>
+                {invoicesData?.customerCode}
+              </strong>
             </p>
           </div>
-          <button onClick={() => navigate(ROUTES.CUSTOMER_DASHBOARD)} className="btn-secondary">
+          <button onClick={() => navigate(ROUTES.CUSTOMER_DASHBOARD)} className="btn btn-outline">
             ← Back to Dashboard
           </button>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <div className="alert alert-error mb-4">{error}</div>}
 
-        <div className="table-container" style={{ background: '#111827', borderRadius: '10px', border: '1px solid #1f2937', overflow: 'hidden' }}>
+        <div className="table-container card" style={{ padding: 0 }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading invoices...</div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Loading invoices...
+            </div>
           ) : !invoicesData?.invoices || invoicesData.invoices.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>No invoices found for your account.</div>
+            <div className="empty-state">
+              <div className="empty-icon">🧾</div>
+              <h3>No invoices found</h3>
+              <p>No billing invoices are currently issued for your customer account.</p>
+            </div>
           ) : (
-            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className="table-custom">
               <thead>
-                <tr style={{ background: '#1f2937', color: '#9ca3af', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '14px 16px' }}>Invoice #</th>
-                  <th style={{ padding: '14px 16px' }}>Customer ID</th>
-                  <th style={{ padding: '14px 16px' }}>Date</th>
-                  <th style={{ padding: '14px 16px' }}>Description</th>
-                  <th style={{ padding: '14px 16px' }}>Amount</th>
-                  <th style={{ padding: '14px 16px' }}>Status</th>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Customer ID</th>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {invoicesData.invoices.map((inv) => (
-                  <tr key={inv.id} style={{ borderBottom: '1px solid #1f2937', color: '#e5e7eb' }}>
-                    <td style={{ padding: '14px 16px', fontWeight: '700', color: '#60a5fa' }}>{inv.invoiceNumber}</td>
-                    <td style={{ padding: '14px 16px', color: '#00d4aa', fontWeight: '600' }}>{inv.customerCode}</td>
-                    <td style={{ padding: '14px 16px', color: '#9ca3af' }}>{inv.date}</td>
-                    <td style={{ padding: '14px 16px' }}>{inv.description}</td>
-                    <td style={{ padding: '14px 16px', fontWeight: '700', color: '#10b981' }}>₹{inv.amount.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span className="badge badge-active" style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981' }}>
-                        {inv.status}
+                  <tr key={inv.id}>
+                    <td>
+                      <span style={{ fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
+                        {inv.invoiceNumber}
                       </span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{inv.customerCode}</span>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)' }}>{inv.date}</td>
+                    <td>{inv.description}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--accent-secondary)' }}>
+                      ₹{inv.amount.toLocaleString('en-IN')}
+                    </td>
+                    <td>
+                      <span className="badge badge-success">{inv.status}</span>
                     </td>
                   </tr>
                 ))}
@@ -86,3 +101,4 @@ const CustomerInvoices = () => {
 };
 
 export default CustomerInvoices;
+

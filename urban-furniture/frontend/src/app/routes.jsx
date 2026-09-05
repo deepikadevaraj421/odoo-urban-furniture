@@ -3,6 +3,7 @@ import ProtectedRoute from './ProtectedRoute';
 import { ROLES, ACCOUNTANT_TYPES, ROUTES } from '../utils/constants';
 
 // Pages
+import LandingPage from '../features/landing/LandingPage';
 import AdminRegister from '../features/auth/pages/AdminRegister';
 import AcceptInvitation from '../features/auth/pages/AcceptInvitation';
 import Login from '../features/auth/pages/Login';
@@ -22,6 +23,9 @@ import CustomerProfile from '../features/customer/pages/CustomerProfile';
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+
       {/* Public Routes */}
       <Route path="/admin/register" element={<AdminRegister />} />
       <Route path="/accept-invitation" element={<AcceptInvitation />} />
@@ -126,7 +130,7 @@ const AppRoutes = () => {
       />
 
       {/* Default Catch-all Redirect */}
-      <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

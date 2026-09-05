@@ -26,55 +26,72 @@ const CustomerPayments = () => {
   }, []);
 
   return (
-    <div className="dashboard-container">
-      <Header title="Urban Furniture" subtitle="Customer Portal — My Payments" />
+    <div className="dashboard-layout">
+      <Header title="Urban Furniture ERP" subtitle="Customer Portal — My Payments" />
 
-      <main className="dashboard-content">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <main className="dashboard-main">
+        <div className="flex-between mb-4">
           <div>
-            <h2 style={{ color: '#f3f4f6', margin: '0 0 4px 0' }}>My Payments</h2>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: '0.9rem' }}>
-              Showing payment transactions for Customer ID: <strong style={{ color: '#00d4aa' }}>{paymentsData?.customerCode}</strong>
+            <h2>My Payments</h2>
+            <p className="text-muted" style={{ fontSize: '0.875rem' }}>
+              Showing payment transactions for Customer ID:{' '}
+              <strong style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>
+                {paymentsData?.customerCode}
+              </strong>
             </p>
           </div>
-          <button onClick={() => navigate(ROUTES.CUSTOMER_DASHBOARD)} className="btn-secondary">
+          <button onClick={() => navigate(ROUTES.CUSTOMER_DASHBOARD)} className="btn btn-outline">
             ← Back to Dashboard
           </button>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <div className="alert alert-error mb-4">{error}</div>}
 
-        <div className="table-container" style={{ background: '#111827', borderRadius: '10px', border: '1px solid #1f2937', overflow: 'hidden' }}>
+        <div className="table-container card" style={{ padding: 0 }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading payments...</div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Loading payments...
+            </div>
           ) : !paymentsData?.payments || paymentsData.payments.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>No payment records found for your account.</div>
+            <div className="empty-state">
+              <div className="empty-icon">💳</div>
+              <h3>No payment records found</h3>
+              <p>No payment receipts or transaction records exist for your customer account.</p>
+            </div>
           ) : (
-            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className="table-custom">
               <thead>
-                <tr style={{ background: '#1f2937', color: '#9ca3af', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '14px 16px' }}>Payment #</th>
-                  <th style={{ padding: '14px 16px' }}>Invoice #</th>
-                  <th style={{ padding: '14px 16px' }}>Customer ID</th>
-                  <th style={{ padding: '14px 16px' }}>Date</th>
-                  <th style={{ padding: '14px 16px' }}>Method</th>
-                  <th style={{ padding: '14px 16px' }}>Amount</th>
-                  <th style={{ padding: '14px 16px' }}>Status</th>
+                <tr>
+                  <th>Payment #</th>
+                  <th>Invoice #</th>
+                  <th>Customer ID</th>
+                  <th>Date</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {paymentsData.payments.map((pay) => (
-                  <tr key={pay.id} style={{ borderBottom: '1px solid #1f2937', color: '#e5e7eb' }}>
-                    <td style={{ padding: '14px 16px', fontWeight: '700', color: '#f59e0b' }}>{pay.paymentNumber}</td>
-                    <td style={{ padding: '14px 16px', color: '#60a5fa' }}>{pay.invoiceNumber}</td>
-                    <td style={{ padding: '14px 16px', color: '#00d4aa', fontWeight: '600' }}>{pay.customerCode}</td>
-                    <td style={{ padding: '14px 16px', color: '#9ca3af' }}>{pay.date}</td>
-                    <td style={{ padding: '14px 16px', color: '#d1d5db' }}>{pay.paymentMethod}</td>
-                    <td style={{ padding: '14px 16px', fontWeight: '700', color: '#10b981' }}>₹{pay.amount.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span className="badge badge-active" style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981' }}>
-                        {pay.status}
+                  <tr key={pay.id}>
+                    <td>
+                      <span style={{ fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
+                        {pay.paymentNumber}
                       </span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'monospace' }}>{pay.invoiceNumber}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{pay.customerCode}</span>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)' }}>{pay.date}</td>
+                    <td>{pay.paymentMethod}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--accent-secondary)' }}>
+                      ₹{pay.amount.toLocaleString('en-IN')}
+                    </td>
+                    <td>
+                      <span className="badge badge-success">{pay.status}</span>
                     </td>
                   </tr>
                 ))}
@@ -88,3 +105,4 @@ const CustomerPayments = () => {
 };
 
 export default CustomerPayments;
+

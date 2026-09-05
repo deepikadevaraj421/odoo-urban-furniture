@@ -61,22 +61,24 @@ const OTPForm = ({ onSubmit, onResend, loading, error, resendMessage }) => {
         <button
           type="submit"
           disabled={loading || otp.length !== 6}
-          className="btn-primary"
+          className="btn btn-primary btn-block"
         >
           {loading ? 'Verifying OTP...' : 'Verify OTP & Login'}
         </button>
 
-        <div className="resend-container">
+        <div className="resend-container" style={{ marginTop: '1.25rem', textAlign: 'center' }}>
           {canResend ? (
             <button
               type="button"
               onClick={handleResendClick}
-              className="btn-link"
+              className="btn btn-text"
             >
               Resend OTP
             </button>
           ) : (
-            <span className="timer-text">Resend OTP in {timer}s</span>
+            <span className="timer-text" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              Resend OTP in {timer}s
+            </span>
           )}
         </div>
       </form>
