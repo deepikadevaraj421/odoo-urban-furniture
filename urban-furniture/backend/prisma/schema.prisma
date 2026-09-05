@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================================
+// ENUMS
+// ==============================================
+
+enum Role {
+  ADMIN
+  ACCOUNTANT
+  CUSTOMER
+}
+
+enum AccountantType {
+  SALES
+  PURCHASE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ==============================================
+// USER MODEL
+// ==============================================
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String?
+  role         Role
+  status       UserStatus @default(ACTIVE)
+  createdBy    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relations
+  accountant Accountant?
+  customer   Customer?
+  otps       Otp[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// ==============================================
+// ACCOUNTANT MODEL
+// ==============================================
+
+model Accountant {
+  id             String         @id @default(uuid())
+  userId         String         @unique
+  accountantCode String         @unique
+  employeeId     String         @unique
+  mobile         String
+  department     String
+  accountantType AccountantType
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([accountantCode])
+  @@index([employeeId])
+  @@index([accountantType])
+  @@map("accountants")
+}
+
+// ==============================================
+// CUSTOMER MODEL
+// ==============================================
+
+model Customer {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  customerCode String   @unique
+  mobile       String
+  address      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([customerCode])
+  @@map("customers")
+}
+
+// ==============================================
+// OTP MODEL
+// ==============================================
+
+model Otp {
+  id         String    @id @default(uuid())
+  userId     String
+  otpHash    String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("otps")
+}
