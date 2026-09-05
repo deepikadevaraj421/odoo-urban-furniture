@@ -17,7 +17,6 @@ const AddAccountant = () => {
     employeeId: '',
     department: 'Accounting',
     accountantType: 'SALES',
-    password: '',
   });
 
   const handleChange = (e) => {
@@ -35,11 +34,11 @@ const AddAccountant = () => {
       const response = await adminApi.createAccountant(formData);
       const data = response.data;
       setSuccess(
-        `Accountant created successfully! Accountant Code: ${data.accountant.accountantCode}`
+        `Accountant created successfully!\nAccountant ID: ${data.accountant.accountantCode}\nInvitation sent to: ${data.accountant.email}`
       );
       setTimeout(() => {
         navigate(ROUTES.ADMIN_DASHBOARD);
-      }, 2000);
+      }, 3000);
     } catch (err) {
       setError(
         err.response?.data?.message || 'Failed to create accountant.'
@@ -50,135 +49,131 @@ const AddAccountant = () => {
   };
 
   return (
-    <div className="dashboard-container">
-      <Header title="Urban Furniture" subtitle="Admin — Add Accountant" />
+    <div className="dashboard-layout">
+      <Header title="Urban Furniture ERP" subtitle="Admin Portal" />
 
-      <main className="dashboard-content">
-        <div className="form-card">
-          <div className="form-header">
-            <h2>Add New Accountant</h2>
+      <main className="dashboard-main" style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+        <div className="card">
+          <div className="flex-between mb-4">
+            <div>
+              <h2>Add New Accountant</h2>
+              <p className="text-muted" style={{ fontSize: '0.875rem' }}>
+                Create an accountant user and dispatch an email invitation link.
+              </p>
+            </div>
             <button
               onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}
-              className="btn-secondary"
+              className="btn btn-outline"
             >
               ← Back to Dashboard
             </button>
           </div>
 
-          {error && <div className="alert alert-error">{error}</div>}
-          {success && <div className="alert alert-success">{success}</div>}
+          {error && <div className="alert alert-error mb-4">{error}</div>}
+          {success && (
+            <div className="alert alert-success mb-4" style={{ whiteSpace: 'pre-line' }}>
+              {success}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} className="grid-form">
-            <div className="form-group">
-              <label htmlFor="acc-name">Full Name *</label>
-              <input
-                id="acc-name"
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Arun Kumar"
-                required
-                className="form-input"
-              />
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+              <div className="form-group">
+                <label htmlFor="acc-name">Full Name *</label>
+                <input
+                  id="acc-name"
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Arun Kumar"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="acc-email">Email Address *</label>
+                <input
+                  id="acc-email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="arun@gmail.com"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="acc-mobile">Mobile Number *</label>
+                <input
+                  id="acc-mobile"
+                  type="text"
+                  name="mobile"
+                  value={formData.mobile}
+                  onChange={handleChange}
+                  placeholder="+91 9876543210"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="acc-employeeId">Employee ID *</label>
+                <input
+                  id="acc-employeeId"
+                  type="text"
+                  name="employeeId"
+                  value={formData.employeeId}
+                  onChange={handleChange}
+                  placeholder="UF-ACC-001"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="acc-department">Department *</label>
+                <input
+                  id="acc-department"
+                  type="text"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  placeholder="Finance & Accounting"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="acc-accountantType">Accountant Type *</label>
+                <select
+                  id="acc-accountantType"
+                  name="accountantType"
+                  value={formData.accountantType}
+                  onChange={handleChange}
+                  required
+                  className="form-select"
+                >
+                  <option value="SALES">Sales Accountant</option>
+                  <option value="PURCHASE">Purchase Accountant</option>
+                </select>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="acc-email">Email Address *</label>
-              <input
-                id="acc-email"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="arun@urbanfurniture.com"
-                required
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="acc-mobile">Mobile Number *</label>
-              <input
-                id="acc-mobile"
-                type="text"
-                name="mobile"
-                value={formData.mobile}
-                onChange={handleChange}
-                placeholder="+91 9876543210"
-                required
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="acc-employeeId">Employee ID *</label>
-              <input
-                id="acc-employeeId"
-                type="text"
-                name="employeeId"
-                value={formData.employeeId}
-                onChange={handleChange}
-                placeholder="UF-ACC-001"
-                required
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="acc-department">Department *</label>
-              <input
-                id="acc-department"
-                type="text"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                placeholder="Finance & Accounting"
-                required
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="acc-accountantType">Accountant Type *</label>
-              <select
-                id="acc-accountantType"
-                name="accountantType"
-                value={formData.accountantType}
-                onChange={handleChange}
-                required
-                className="form-select"
-              >
-                <option value="SALES">Sales Accountant</option>
-                <option value="PURCHASE">Purchase Accountant</option>
-              </select>
-            </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="acc-password">Initial Password * (Min 8 characters)</label>
-              <input
-                id="acc-password"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                minLength={8}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-actions full-width">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
               <button
                 type="button"
                 onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}
-                className="btn-secondary"
+                className="btn btn-outline"
               >
                 Cancel
               </button>
-              <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Creating Accountant...' : 'Create Accountant'}
+              <button type="submit" disabled={loading} className="btn btn-primary">
+                {loading ? 'Sending Invitation...' : 'Send Invitation'}
               </button>
             </div>
           </form>
@@ -189,3 +184,4 @@ const AddAccountant = () => {
 };
 
 export default AddAccountant;
+

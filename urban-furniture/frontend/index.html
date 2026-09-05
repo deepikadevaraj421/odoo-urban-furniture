@@ -4,7 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta name="description" content="Urban Furniture ERP — Premium modern furniture management system for inventory, customers, invoices, and payments." />
+    <meta name="theme-color" content="#4a7c59" />
+    <title>Urban Furniture ERP</title>
+    <script>
+      // Prevent flash of wrong theme
+      (function() {
+        var stored = localStorage.getItem('uf_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = stored || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

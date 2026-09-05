@@ -27,10 +27,27 @@ router.post(
   adminController.createCustomer
 );
 
+const customerController = require('../customer/customer.controller');
+
+router.get(
+  '/customers',
+  customerController.getCustomers
+);
+
+router.post(
+  '/customers/:id/resend-invitation',
+  customerController.resendInvitation
+);
+
 router.post(
   '/users',
   adminController.createCustomerValidation,
   adminController.createCustomer
+);
+
+router.get(
+  '/users',
+  require('../customer/customer.controller').getCustomers
 );
 
 module.exports = router;

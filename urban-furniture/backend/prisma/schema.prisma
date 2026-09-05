@@ -28,6 +28,9 @@ enum AccountantType {
 enum UserStatus {
   ACTIVE
   INACTIVE
+  INVITED
+  DISABLED
+  PENDING_VERIFICATION
 }
 
 // ==============================================
@@ -48,6 +51,7 @@ model User {
   // Relations
   accountant Accountant?
   customer   Customer?
+  invitation Invitation?
   otps       Otp[]
 
   @@index([email])
@@ -97,6 +101,24 @@ model Customer {
 
   @@index([customerCode])
   @@map("customers")
+}
+
+// ==============================================
+// INVITATION MODEL
+// ==============================================
+
+model Invitation {
+  id         String    @id @default(uuid())
+  userId     String    @unique
+  tokenHash  String
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
 }
 
 // ==============================================

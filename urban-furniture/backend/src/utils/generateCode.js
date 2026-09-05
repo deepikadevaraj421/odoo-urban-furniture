@@ -25,7 +25,7 @@ const generateAccountantCode = async () => {
 
 /**
  * Generate unique Customer Code
- * Format: CUST-00001, CUST-00002, ...
+ * Format: CUS-00001, CUS-00002, ...
  */
 const generateCustomerCode = async () => {
   const lastCustomer = await prisma.customer.findFirst({
@@ -43,7 +43,7 @@ const generateCustomerCode = async () => {
     }
   }
 
-  return `CUST-${String(nextNum).padStart(5, '0')}`;
+  return `CUS-${String(nextNum).padStart(5, '0')}`;
 };
 
 module.exports = { generateAccountantCode, generateCustomerCode };

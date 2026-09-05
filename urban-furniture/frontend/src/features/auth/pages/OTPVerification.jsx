@@ -9,8 +9,9 @@ const OTPVerification = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   const userId = location.state?.userId;
+  const isAdminSetup = location.state?.isAdminSetup;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,12 +28,14 @@ const OTPVerification = () => {
     setResendMessage('');
 
     try {
-      const response = await authApi.verifyOtp({ userId, otp });
+      const response = isAdminSetup
+        ? await authApi.verifyAdminOtp({ userId, otp })
+        : await authApi.verifyOtp({ userId, otp });
       const data = response.data;
 
       if (data.token && data.user) {
         login(data.token, data.user);
-        navigate(data.redirectTo || ROUTES.LOGIN);
+        navigate(data.redirectTo || ROUTES.ADMIN_DASHBOARD);
       }
     } catch (err) {
       setError(
@@ -58,16 +61,31 @@ const OTPVerification = () => {
   };
 
   return (
-    <div className="auth-page-container">
-      <OTPForm
-        onSubmit={handleVerifyOtp}
-        onResend={handleResendOtp}
-        loading={loading}
-        error={error}
-        resendMessage={resendMessage}
-      />
+    <div className="auth-split-wrapper">
+      <div className="auth-image-side">
+        <div className="auth-image-overlay">
+          <div className="auth-brand">
+            <span className="brand-icon">🛋️</span>
+            <span className="brand-name">Urban Furniture</span>
+          </div>
+          <blockquote className="auth-quote">
+            "Verification complete. Welcome to your handcrafted management workspace."
+          </blockquote>
+        </div>
+      </div>
+
+      <div className="auth-form-side">
+        <OTPForm
+          onSubmit={handleVerifyOtp}
+          onResend={handleResendOtp}
+          loading={loading}
+          error={error}
+          resendMessage={resendMessage}
+        />
+      </div>
     </div>
   );
 };
 
 export default OTPVerification;
+

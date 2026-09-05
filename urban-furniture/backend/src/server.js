@@ -1,5 +1,6 @@
 const app = require('./app');
 const env = require('./config/env');
+const { verifyTransporter } = require('./utils/email');
 
 const PORT = env.PORT;
 
@@ -14,4 +15,5 @@ app.listen(PORT, () => {
   console.log(`  📦  Environment: ${env.NODE_ENV}`);
   console.log('═══════════════════════════════════════════════');
   console.log('');
+  verifyTransporter();
 });

@@ -26,11 +26,6 @@ const env = {
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASSWORD: process.env.SMTP_PASSWORD,
   SMTP_FROM: process.env.SMTP_FROM,
-
-  // Admin Seed
-  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@urbanfurniture.com',
-  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'Admin@123',
-  ADMIN_NAME: process.env.ADMIN_NAME || 'System Administrator',
 };
 
 // Validate required environment variables
