@@ -17,7 +17,6 @@ const AddAccountant = () => {
     employeeId: '',
     department: 'Accounting',
     accountantType: 'SALES',
-    password: '',
   });
 
   const handleChange = (e) => {
@@ -35,11 +34,11 @@ const AddAccountant = () => {
       const response = await adminApi.createAccountant(formData);
       const data = response.data;
       setSuccess(
-        `Accountant created successfully! Accountant Code: ${data.accountant.accountantCode}`
+        `Accountant created successfully!\nAccountant ID: ${data.accountant.accountantCode}\nInvitation sent to: ${data.accountant.email}`
       );
       setTimeout(() => {
         navigate(ROUTES.ADMIN_DASHBOARD);
-      }, 2000);
+      }, 3000);
     } catch (err) {
       setError(
         err.response?.data?.message || 'Failed to create accountant.'
@@ -66,7 +65,11 @@ const AddAccountant = () => {
           </div>
 
           {error && <div className="alert alert-error">{error}</div>}
-          {success && <div className="alert alert-success">{success}</div>}
+          {success && (
+            <div className="alert alert-success" style={{ whitespace: 'pre-line' }}>
+              {success}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="grid-form">
             <div className="form-group">
@@ -91,7 +94,7 @@ const AddAccountant = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="arun@urbanfurniture.com"
+                placeholder="arun@gmail.com"
                 required
                 className="form-input"
               />
@@ -154,21 +157,6 @@ const AddAccountant = () => {
               </select>
             </div>
 
-            <div className="form-group full-width">
-              <label htmlFor="acc-password">Initial Password * (Min 8 characters)</label>
-              <input
-                id="acc-password"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                minLength={8}
-                className="form-input"
-              />
-            </div>
-
             <div className="form-actions full-width">
               <button
                 type="button"
@@ -178,7 +166,7 @@ const AddAccountant = () => {
                 Cancel
               </button>
               <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Creating Accountant...' : 'Create Accountant'}
+                {loading ? 'Sending Invitation...' : 'Send Invitation'}
               </button>
             </div>
           </form>

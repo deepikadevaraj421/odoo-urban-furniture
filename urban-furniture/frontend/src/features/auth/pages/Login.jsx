@@ -19,15 +19,14 @@ const Login = () => {
       const response = await authApi.login(formData);
       const data = response.data;
 
-      if (data.requiresOtp) {
-        // Redirect to OTP Verification page with userId in state
+      if (data.token && data.user) {
+        // Direct password login without OTP (for Admin & Accountant)
+        login(data.token, data.user);
+        navigate(data.redirectTo || ROUTES.ADMIN_DASHBOARD);
+      } else if (data.requiresOtp) {
         navigate(ROUTES.OTP_VERIFICATION, {
           state: { userId: data.userId },
         });
-      } else if (data.token) {
-        // Admin direct login without OTP
-        login(data.token, data.user);
-        navigate(data.redirectTo || ROUTES.ADMIN_DASHBOARD);
       }
     } catch (err) {
       setError(

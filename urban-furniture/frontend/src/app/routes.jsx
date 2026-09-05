@@ -3,6 +3,8 @@ import ProtectedRoute from './ProtectedRoute';
 import { ROLES, ACCOUNTANT_TYPES, ROUTES } from '../utils/constants';
 
 // Pages
+import AdminRegister from '../features/auth/pages/AdminRegister';
+import AcceptInvitation from '../features/auth/pages/AcceptInvitation';
 import Login from '../features/auth/pages/Login';
 import OTPVerification from '../features/auth/pages/OTPVerification';
 import Unauthorized from '../features/auth/pages/Unauthorized';
@@ -17,6 +19,8 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
+      <Route path="/admin/register" element={<AdminRegister />} />
+      <Route path="/accept-invitation" element={<AcceptInvitation />} />
       <Route path={ROUTES.LOGIN} element={<Login />} />
       <Route path={ROUTES.OTP_VERIFICATION} element={<OTPVerification />} />
       <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />

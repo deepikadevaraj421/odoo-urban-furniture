@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { LOGIN_TYPES } from '../../../utils/constants';
 
 const LoginForm = ({ onSubmit, loading, error }) => {
@@ -6,8 +7,6 @@ const LoginForm = ({ onSubmit, loading, error }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    identifier: '',
-    customerCode: '',
   });
 
   const handleChange = (e) => {
@@ -20,8 +19,6 @@ const LoginForm = ({ onSubmit, loading, error }) => {
     setFormData({
       email: '',
       password: '',
-      identifier: '',
-      customerCode: '',
     });
   };
 
@@ -98,14 +95,14 @@ const LoginForm = ({ onSubmit, loading, error }) => {
         {loginType === LOGIN_TYPES.ACCOUNTANT && (
           <>
             <div className="form-group">
-              <label htmlFor="accountant-identifier">Email OR Accountant Code</label>
+              <label htmlFor="accountant-email">Registered Email Address</label>
               <input
-                id="accountant-identifier"
-                type="text"
-                name="identifier"
-                value={formData.identifier}
+                id="accountant-email"
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                placeholder="arun@urbanfurniture.com or UF-ACC-00001"
+                placeholder="arun@gmail.com"
                 required
                 className="form-input"
               />
@@ -127,39 +124,24 @@ const LoginForm = ({ onSubmit, loading, error }) => {
         )}
 
         {loginType === LOGIN_TYPES.CUSTOMER && (
-          <>
-            <div className="form-group">
-              <label htmlFor="customer-code">Customer Code</label>
-              <input
-                id="customer-code"
-                type="text"
-                name="customerCode"
-                value={formData.customerCode}
-                onChange={handleChange}
-                placeholder="CUST-00001"
-                required
-                className="form-input"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="customer-email">Registered Email</label>
-              <input
-                id="customer-email"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="customer@example.com"
-                required
-                className="form-input"
-              />
-            </div>
-          </>
+          <div className="placeholder-note text-center" style={{ margin: '20px 0' }}>
+            <p style={{ color: '#9ca3af' }}>Customer authentication will be implemented in a subsequent phase.</p>
+          </div>
         )}
 
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? 'Authenticating...' : loginType === LOGIN_TYPES.ADMIN ? 'Login' : 'Send OTP'}
-        </button>
+        {loginType !== LOGIN_TYPES.CUSTOMER && (
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? 'Authenticating...' : 'Login'}
+          </button>
+        )}
+
+        {loginType === LOGIN_TYPES.ADMIN && (
+          <div className="resend-container" style={{ marginTop: '16px' }}>
+            <Link to="/admin/register" className="btn-link">
+              First time setup? Register Initial Admin Account
+            </Link>
+          </div>
+        )}
       </form>
     </div>
   );

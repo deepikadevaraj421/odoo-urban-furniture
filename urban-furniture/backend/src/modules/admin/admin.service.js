@@ -1,13 +1,15 @@
 const prisma = require('../../config/database');
-const { hashPassword } = require('../auth/password.service');
 const { generateAccountantCode, generateCustomerCode } = require('../../utils/generateCode');
-const { sendAccountActivationEmail } = require('../../utils/email');
+const { createAndSendInvitation } = require('../auth/invitation.service');
 
 /**
  * Create a new Accountant account (Admin only)
+ * - Sets status = INVITED
+ * - NO password parameters accepted or generated
+ * - Sends email invitation with token link
  */
 const createAccountant = async (data, adminId) => {
-  const { name, email, mobile, employeeId, department, accountantType, password } = data;
+  const { name, email, mobile, employeeId, department, accountantType } = data;
 
   // Check email uniqueness
   const existingEmail = await prisma.user.findUnique({ where: { email } });
@@ -24,18 +26,15 @@ const createAccountant = async (data, adminId) => {
   // Generate accountant code
   const accountantCode = await generateAccountantCode();
 
-  // Hash password
-  const passwordHash = await hashPassword(password);
-
-  // Create user and accountant profile in a transaction
+  // Create user and accountant profile in transaction
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         name,
         email,
-        passwordHash,
+        passwordHash: null, // Password created later by accountant
         role: 'ACCOUNTANT',
-        status: 'ACTIVE',
+        status: 'INVITED',
         createdBy: adminId,
       },
     });
@@ -54,17 +53,22 @@ const createAccountant = async (data, adminId) => {
     return { user, accountant };
   });
 
-  // Send activation email
+  // Generate secure token and send email invitation
   try {
-    await sendAccountActivationEmail(email, name, result.accountant.accountantCode, password);
+    await createAndSendInvitation({
+      userId: result.user.id,
+      email: result.user.email,
+      name: result.user.name,
+      accountantCode: result.accountant.accountantCode,
+      accountantType: result.accountant.accountantType,
+    });
   } catch (emailError) {
-    console.error('Failed to send activation email:', emailError.message);
-    // Don't fail the creation if email fails
+    console.error('Failed to send invitation email:', emailError.message);
   }
 
   return {
     success: true,
-    message: 'Accountant created successfully.',
+    message: 'Accountant created and invitation sent successfully.',
     accountant: {
       id: result.accountant.id,
       userId: result.user.id,
@@ -74,62 +78,6 @@ const createAccountant = async (data, adminId) => {
       employeeId: result.accountant.employeeId,
       department: result.accountant.department,
       accountantType: result.accountant.accountantType,
-      status: result.user.status,
-    },
-  };
-};
-
-/**
- * Create a new Customer account (Admin only)
- */
-const createCustomer = async (data, adminId) => {
-  const { name, email, mobile, address } = data;
-
-  // Check email uniqueness
-  const existingEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingEmail) {
-    return { success: false, message: 'A user with this email already exists.' };
-  }
-
-  // Generate customer code
-  const customerCode = await generateCustomerCode();
-
-  // Create user and customer profile in a transaction
-  // Customers authenticate via OTP only — no password needed
-  const result = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        name,
-        email,
-        role: 'CUSTOMER',
-        status: 'ACTIVE',
-        createdBy: adminId,
-      },
-    });
-
-    const customer = await tx.customer.create({
-      data: {
-        userId: user.id,
-        customerCode,
-        mobile,
-        address,
-      },
-    });
-
-    return { user, customer };
-  });
-
-  return {
-    success: true,
-    message: 'Customer created successfully.',
-    customer: {
-      id: result.customer.id,
-      userId: result.user.id,
-      name: result.user.name,
-      email: result.user.email,
-      customerCode: result.customer.customerCode,
-      mobile: result.customer.mobile,
-      address: result.customer.address,
       status: result.user.status,
     },
   };
@@ -173,4 +121,56 @@ const getAccountants = async () => {
   };
 };
 
-module.exports = { createAccountant, createCustomer, getAccountants };
+/**
+ * Create Customer account (Admin only - placeholder)
+ */
+const createCustomer = async (data, adminId) => {
+  const { name, email, mobile, address } = data;
+
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingEmail) {
+    return { success: false, message: 'A user with this email already exists.' };
+  }
+
+  const customerCode = await generateCustomerCode();
+
+  const result = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name,
+        email,
+        role: 'CUSTOMER',
+        status: 'ACTIVE',
+        createdBy: adminId,
+      },
+    });
+
+    const customer = await tx.customer.create({
+      data: {
+        userId: user.id,
+        customerCode,
+        mobile,
+        address,
+      },
+    });
+
+    return { user, customer };
+  });
+
+  return {
+    success: true,
+    message: 'Customer created successfully.',
+    customer: {
+      id: result.customer.id,
+      userId: result.user.id,
+      name: result.user.name,
+      email: result.user.email,
+      customerCode: result.customer.customerCode,
+      mobile: result.customer.mobile,
+      address: result.customer.address,
+      status: result.user.status,
+    },
+  };
+};
+
+module.exports = { createAccountant, getAccountants, createCustomer };

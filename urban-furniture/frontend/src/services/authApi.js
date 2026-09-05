@@ -2,20 +2,35 @@ import api from './api';
 
 export const authApi = {
   /**
-   * Login — unified endpoint for all roles
-   * @param {Object} data - { loginType, email?, password?, identifier?, customerCode? }
+   * Initial Admin One-Time Registration
    */
-  login: (data) => api.post('/auth/login', data),
+  registerAdmin: (data) => api.post('/auth/admin/register', data),
 
   /**
-   * Verify OTP
-   * @param {Object} data - { userId, otp }
+   * Verify Admin Registration OTP
    */
-  verifyOtp: (data) => api.post('/auth/verify-otp', data),
+  verifyAdminOtp: (data) => api.post('/auth/admin/verify-otp', data),
+
+  /**
+   * Unified / Direct Login (Admin or Accountant password login - NO OTP)
+   */
+  login: (data) => api.post('/auth/login', data),
+  loginAdmin: (data) => api.post('/auth/admin/login', data),
+  loginAccountant: (data) => api.post('/auth/accountant/login', data),
+
+  /**
+   * Get Accountant Invitation details for setup page
+   */
+  getInvitationInfo: (id, token) =>
+    api.get(`/auth/accountant/invitation-info?id=${id}&token=${token}`),
+
+  /**
+   * Accept Invitation & Create Password
+   */
+  acceptInvitation: (data) => api.post('/auth/accountant/accept-invitation', data),
 
   /**
    * Resend OTP
-   * @param {Object} data - { userId }
    */
   resendOtp: (data) => api.post('/auth/resend-otp', data),
 
@@ -27,9 +42,14 @@ export const authApi = {
 
 export const adminApi = {
   /**
-   * Create a new accountant
+   * Create a new accountant (triggers invitation email, NO password)
    */
   createAccountant: (data) => api.post('/admin/accountants', data),
+
+  /**
+   * Get list of all accountants
+   */
+  getAccountants: () => api.get('/admin/accountants'),
 
   /**
    * Create a new customer

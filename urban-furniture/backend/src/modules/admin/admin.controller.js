@@ -15,9 +15,6 @@ const createAccountantValidation = [
   body('accountantType')
     .isIn(['SALES', 'PURCHASE'])
     .withMessage('Accountant type must be SALES or PURCHASE.'),
-  body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters.'),
   validateRequest,
 ];
 

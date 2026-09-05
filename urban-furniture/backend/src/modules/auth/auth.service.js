@@ -1,10 +1,106 @@
 const prisma = require('../../config/database');
-const { comparePassword } = require('./password.service');
+const { hashPassword, comparePassword } = require('./password.service');
 const { generateToken } = require('./jwt.service');
 const { createAndSendOtp, verifyOtp } = require('./otp.service');
 
 /**
- * Admin Login — Email + Password → JWT (no OTP)
+ * Initial One-Time Admin Registration
+ * - Allowed ONLY if no ADMIN account currently exists in the database.
+ */
+const registerAdmin = async ({ name, email, password }) => {
+  // Check if an ADMIN already exists
+  const existingAdmin = await prisma.user.findFirst({
+    where: { role: 'ADMIN', status: 'ACTIVE' },
+  });
+
+  if (existingAdmin) {
+    return {
+      success: false,
+      message: 'Admin account already exists. Only one Admin account is allowed. Please login.',
+    };
+  }
+
+  // Check email uniqueness
+  const existingEmail = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingEmail && existingEmail.role !== 'ADMIN') {
+    return { success: false, message: 'A user with this email already exists.' };
+  }
+
+  // Hash password
+  const passwordHash = await hashPassword(password);
+
+  let user = existingEmail;
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        role: 'ADMIN',
+        status: 'PENDING_VERIFICATION',
+        createdBy: 'SELF_REGISTRATION',
+      },
+    });
+  } else {
+    // Update existing pending user
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name,
+        passwordHash,
+        status: 'PENDING_VERIFICATION',
+      },
+    });
+  }
+
+  // Send registration OTP
+  await createAndSendOtp(user.id, user.email);
+
+  return {
+    success: true,
+    requiresOtp: true,
+    userId: user.id,
+    message: 'OTP sent to your email for Admin setup verification.',
+  };
+};
+
+/**
+ * Verify Admin Registration OTP and Activate Admin
+ */
+const verifyAdminRegistrationOtp = async (userId, otp) => {
+  const result = await verifyOtp(userId, otp);
+
+  if (!result.valid) {
+    return { success: false, message: result.message };
+  }
+
+  // Activate Admin account
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { status: 'ACTIVE' },
+  });
+
+  // Generate JWT token
+  const token = generateToken({ userId: user.id, role: user.role });
+
+  return {
+    success: true,
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+    redirectTo: '/admin/dashboard',
+  };
+};
+
+/**
+ * Admin Normal Login — Email + Password (NO OTP)
  */
 const loginAdmin = async (email, password) => {
   const user = await prisma.user.findUnique({
@@ -16,7 +112,7 @@ const loginAdmin = async (email, password) => {
   }
 
   if (user.status !== 'ACTIVE') {
-    return { success: false, message: 'Account is inactive.' };
+    return { success: false, message: 'Admin account is not active.' };
   }
 
   const isPasswordValid = await comparePassword(password, user.passwordHash);
@@ -24,7 +120,7 @@ const loginAdmin = async (email, password) => {
     return { success: false, message: 'Invalid email or password.' };
   }
 
-  // Admin does NOT require OTP — issue token immediately
+  // Generate JWT immediately — NO OTP
   const token = generateToken({ userId: user.id, role: user.role });
 
   return {
@@ -42,127 +138,52 @@ const loginAdmin = async (email, password) => {
 };
 
 /**
- * Accountant Login — Email/Code + Password → OTP sent
+ * Accountant Login — Registered Email + Password (NO OTP)
  */
-const loginAccountant = async (identifier, password) => {
-  // Find by email or accountant code
-  let user;
-  let accountant;
-
-  // Try as accountant code first
-  accountant = await prisma.accountant.findUnique({
-    where: { accountantCode: identifier },
-    include: { user: true },
+const loginAccountant = async (email, password) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { accountant: true },
   });
 
-  if (accountant) {
-    user = accountant.user;
-  } else {
-    // Try as email
-    user = await prisma.user.findUnique({
-      where: { email: identifier },
-      include: { accountant: true },
-    });
-    if (user) {
-      accountant = user.accountant;
-    }
+  if (!user || user.role !== 'ACCOUNTANT' || !user.accountant) {
+    return { success: false, message: 'Invalid email or password.' };
   }
 
-  if (!user || user.role !== 'ACCOUNTANT' || !accountant) {
-    return { success: false, message: 'Invalid credentials.' };
+  if (user.status === 'INVITED') {
+    return {
+      success: false,
+      message: 'Your account is pending activation. Please check your email and accept your invitation.',
+    };
   }
 
   if (user.status !== 'ACTIVE') {
     return { success: false, message: 'Account is inactive. Contact administrator.' };
   }
 
+  if (!user.passwordHash) {
+    return {
+      success: false,
+      message: 'Password not set. Please accept your invitation email first.',
+    };
+  }
+
   const isPasswordValid = await comparePassword(password, user.passwordHash);
   if (!isPasswordValid) {
-    return { success: false, message: 'Invalid credentials.' };
+    return { success: false, message: 'Invalid email or password.' };
   }
 
-  // Send OTP
-  await createAndSendOtp(user.id, user.email);
-
-  return {
-    success: true,
-    requiresOtp: true,
-    userId: user.id,
-    message: 'OTP sent to your registered email.',
-  };
-};
-
-/**
- * Customer Login — Customer Code + Email → OTP sent (no password)
- */
-const loginCustomer = async (customerCode, email) => {
-  const customer = await prisma.customer.findUnique({
-    where: { customerCode },
-    include: { user: true },
-  });
-
-  if (!customer || customer.user.email !== email) {
-    return { success: false, message: 'Invalid customer code or email.' };
-  }
-
-  if (customer.user.status !== 'ACTIVE') {
-    return { success: false, message: 'Account is inactive. Contact administrator.' };
-  }
-
-  // Send OTP
-  await createAndSendOtp(customer.user.id, customer.user.email);
-
-  return {
-    success: true,
-    requiresOtp: true,
-    userId: customer.user.id,
-    message: 'OTP sent to your registered email.',
-  };
-};
-
-/**
- * Verify OTP and generate JWT
- */
-const verifyOtpAndLogin = async (userId, otp) => {
-  const result = await verifyOtp(userId, otp);
-
-  if (!result.valid) {
-    return { success: false, message: result.message };
-  }
-
-  // Fetch user with relations
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      accountant: true,
-      customer: true,
-    },
-  });
-
-  if (!user) {
-    return { success: false, message: 'User not found.' };
-  }
-
-  // Generate JWT
+  // Generate JWT immediately — NO OTP
   const token = generateToken({ userId: user.id, role: user.role });
 
-  // Determine redirect based on role and type
-  let redirectTo = '/login';
-  let accountantType = null;
-  let customerCode = null;
-
-  if (user.role === 'ACCOUNTANT' && user.accountant) {
-    accountantType = user.accountant.accountantType;
-    redirectTo = accountantType === 'SALES'
-      ? '/accountant/sales/dashboard'
-      : '/accountant/purchase/dashboard';
-  } else if (user.role === 'CUSTOMER' && user.customer) {
-    customerCode = user.customer.customerCode;
-    redirectTo = '/customer/dashboard';
-  }
+  const accountantType = user.accountant.accountantType;
+  const redirectTo = accountantType === 'SALES'
+    ? '/accountant/sales/dashboard'
+    : '/accountant/purchase/dashboard';
 
   return {
     success: true,
+    requiresOtp: false,
     token,
     user: {
       id: user.id,
@@ -170,14 +191,14 @@ const verifyOtpAndLogin = async (userId, otp) => {
       email: user.email,
       role: user.role,
       accountantType,
-      customerCode,
+      accountantCode: user.accountant.accountantCode,
     },
     redirectTo,
   };
 };
 
 /**
- * Resend OTP
+ * Resend OTP for Admin registration
  */
 const resendOtp = async (userId) => {
   const user = await prisma.user.findUnique({
@@ -216,13 +237,6 @@ const getCurrentUser = async (userId) => {
           accountantType: true,
         },
       },
-      customer: {
-        select: {
-          customerCode: true,
-          mobile: true,
-          address: true,
-        },
-      },
     },
   });
 
@@ -234,10 +248,10 @@ const getCurrentUser = async (userId) => {
 };
 
 module.exports = {
+  registerAdmin,
+  verifyAdminRegistrationOtp,
   loginAdmin,
   loginAccountant,
-  loginCustomer,
-  verifyOtpAndLogin,
   resendOtp,
   getCurrentUser,
 };
