@@ -1,14 +1,14 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const prisma = require('../../config/database');
-const { sendAccountantInvitationEmail } = require('../../utils/email');
+const { sendAccountantInvitationEmail, sendCustomerInvitationEmail } = require('../../utils/email');
 
 const INVITATION_EXPIRY_HOURS = 48;
 
 /**
- * Generate and send an Accountant Invitation
+ * Generate and send an Accountant or Customer Invitation
  */
-const createAndSendInvitation = async ({ userId, email, name, accountantCode, accountantType }) => {
+const createAndSendInvitation = async ({ userId, email, name, accountantCode, accountantType, customerCode }) => {
   // Invalidate any existing invitations for this user
   await prisma.invitation.deleteMany({
     where: { userId },
@@ -36,12 +36,18 @@ const createAndSendInvitation = async ({ userId, email, name, accountantCode, ac
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const invitationLink = `${frontendUrl}/accept-invitation?token=${rawToken}&id=${invitation.id}`;
 
-  // Send invitation email
-  await sendAccountantInvitationEmail(email, name, accountantCode, accountantType, invitationLink);
+  // Send invitation email based on role
+  let sendInfo;
+  if (customerCode) {
+    sendInfo = await sendCustomerInvitationEmail(email, name, customerCode, invitationLink);
+  } else {
+    sendInfo = await sendAccountantInvitationEmail(email, name, accountantCode, accountantType, invitationLink);
+  }
 
   return {
     success: true,
     invitationId: invitation.id,
+    messageId: sendInfo?.messageId,
   };
 };
 
@@ -55,6 +61,7 @@ const getInvitationDetails = async (invitationId, rawToken) => {
       user: {
         include: {
           accountant: true,
+          customer: true,
         },
       },
     },
@@ -69,7 +76,7 @@ const getInvitationDetails = async (invitationId, rawToken) => {
   }
 
   if (new Date() > invitation.expiresAt) {
-    return { valid: false, message: 'This invitation link has expired. Please contact Admin.' };
+    return { valid: false, message: 'This invitation link has expired. Please contact Admin/Accountant.' };
   }
 
   // Compare token hash
@@ -84,8 +91,10 @@ const getInvitationDetails = async (invitationId, rawToken) => {
       id: invitation.id,
       name: invitation.user.name,
       email: invitation.user.email,
+      role: invitation.user.role,
       accountantCode: invitation.user.accountant?.accountantCode,
       accountantType: invitation.user.accountant?.accountantType,
+      customerCode: invitation.user.customer?.customerCode,
     },
   };
 };

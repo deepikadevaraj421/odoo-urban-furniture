@@ -111,15 +111,22 @@ const AcceptInvitation = () => {
       <div className="auth-card">
         <div className="auth-header">
           <h2 className="auth-title">Accept Invitation</h2>
-          <p className="auth-subtitle">Create your password to activate your Accountant account</p>
+          <p className="auth-subtitle">Create your password to activate your account</p>
         </div>
 
         {invitationInfo && (
           <div style={{ background: '#16213e', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
             <p style={{ margin: '4px 0', fontSize: '0.9rem' }}><strong style={{ color: '#00d4aa' }}>Name:</strong> {invitationInfo.name}</p>
             <p style={{ margin: '4px 0', fontSize: '0.9rem' }}><strong style={{ color: '#00d4aa' }}>Registered Email:</strong> {invitationInfo.email}</p>
-            <p style={{ margin: '4px 0', fontSize: '0.9rem' }}><strong style={{ color: '#00d4aa' }}>Accountant ID:</strong> {invitationInfo.accountantCode}</p>
-            <p style={{ margin: '4px 0', fontSize: '0.9rem' }}><strong style={{ color: '#00d4aa' }}>Type:</strong> {invitationInfo.accountantType} Accountant</p>
+            {invitationInfo.customerCode && (
+              <p style={{ margin: '4px 0', fontSize: '0.9rem' }}><strong style={{ color: '#00d4aa' }}>Customer ID:</strong> {invitationInfo.customerCode}</p>
+            )}
+            {invitationInfo.accountantCode && (
+              <p style={{ margin: '4px 0', fontSize: '0.9rem' }}><strong style={{ color: '#00d4aa' }}>Accountant ID:</strong> {invitationInfo.accountantCode}</p>
+            )}
+            {invitationInfo.accountantType && (
+              <p style={{ margin: '4px 0', fontSize: '0.9rem' }}><strong style={{ color: '#00d4aa' }}>Type:</strong> {invitationInfo.accountantType} Accountant</p>
+            )}
           </div>
         )}
 
@@ -136,7 +143,7 @@ const AcceptInvitation = () => {
                 name="newPassword"
                 value={passwordData.newPassword}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 required
                 minLength={8}
                 className="form-input"
@@ -151,7 +158,7 @@ const AcceptInvitation = () => {
                 name="confirmPassword"
                 value={passwordData.confirmPassword}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="Confirm your password"
                 required
                 minLength={8}
                 className="form-input"

@@ -29,6 +29,10 @@ export const ROUTES = {
   SALES_DASHBOARD: '/accountant/sales/dashboard',
   PURCHASE_DASHBOARD: '/accountant/purchase/dashboard',
   CUSTOMER_DASHBOARD: '/customer/dashboard',
+  CUSTOMER_MANAGEMENT: '/admin/customers',
+  CUSTOMER_INVOICES: '/customer/invoices',
+  CUSTOMER_PAYMENTS: '/customer/payments',
+  CUSTOMER_PROFILE: '/customer/profile',
 };
 
 // Get redirect path based on role and accountant type

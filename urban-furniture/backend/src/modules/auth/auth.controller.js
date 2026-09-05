@@ -70,7 +70,7 @@ const verifyAdminOtp = async (req, res, next) => {
  * Admin Normal Login (NO OTP)
  */
 const adminLoginValidation = [
-  body('email').isEmail().withMessage('Valid admin email is required.'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid admin email is required.'),
   body('password').notEmpty().withMessage('Password is required.'),
   validateRequest,
 ];
@@ -95,7 +95,7 @@ const loginAdmin = async (req, res, next) => {
  * Accountant Normal Login (NO OTP)
  */
 const accountantLoginValidation = [
-  body('email').isEmail().withMessage('Valid registered email is required.'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid registered email is required.'),
   body('password').notEmpty().withMessage('Password is required.'),
   validateRequest,
 ];
@@ -187,6 +187,31 @@ const acceptInvitation = async (req, res, next) => {
 };
 
 /**
+ * POST /api/auth/customer/login
+ * Customer Normal Login (NO OTP)
+ */
+const customerLoginValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid registered email is required.'),
+  body('password').notEmpty().withMessage('Password is required.'),
+  validateRequest,
+];
+
+const loginCustomer = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const result = await authService.loginCustomer(email, password);
+
+    if (!result.success) {
+      return res.status(401).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * POST /api/auth/login
  * Unified Login Endpoint
  */
@@ -198,10 +223,12 @@ const login = async (req, res, next) => {
       return loginAdmin(req, res, next);
     } else if (loginType === 'ACCOUNTANT') {
       return loginAccountant(req, res, next);
+    } else if (loginType === 'CUSTOMER') {
+      return loginCustomer(req, res, next);
     } else {
       return res.status(400).json({
         success: false,
-        message: 'Customer authentication is not supported in this phase.',
+        message: 'Invalid login type specified.',
       });
     }
   } catch (error) {
@@ -253,6 +280,8 @@ module.exports = {
   adminLoginValidation,
   loginAccountant,
   accountantLoginValidation,
+  loginCustomer,
+  customerLoginValidation,
   getInvitationInfo,
   acceptInvitation,
   acceptInvitationValidation,

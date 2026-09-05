@@ -69,7 +69,7 @@ const AdminRegister = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="System Administrator"
+              placeholder="Enter full name"
               required
               className="form-input"
             />
@@ -83,7 +83,7 @@ const AdminRegister = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="admin@urbanfurniture.com"
+              placeholder="Enter your email"
               required
               className="form-input"
             />
@@ -97,7 +97,7 @@ const AdminRegister = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               required
               minLength={8}
               className="form-input"
@@ -112,7 +112,7 @@ const AdminRegister = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="••••••••"
+              placeholder="Confirm your password"
               required
               minLength={8}
               className="form-input"

@@ -17,17 +17,18 @@ export const authApi = {
   login: (data) => api.post('/auth/login', data),
   loginAdmin: (data) => api.post('/auth/admin/login', data),
   loginAccountant: (data) => api.post('/auth/accountant/login', data),
+  loginCustomer: (data) => api.post('/auth/customer/login', data),
 
   /**
-   * Get Accountant Invitation details for setup page
+   * Get Invitation details for setup page (works for both Accountant and Customer)
    */
   getInvitationInfo: (id, token) =>
-    api.get(`/auth/accountant/invitation-info?id=${id}&token=${token}`),
+    api.get(`/auth/invitation-info?id=${id}&token=${token}`),
 
   /**
    * Accept Invitation & Create Password
    */
-  acceptInvitation: (data) => api.post('/auth/accountant/accept-invitation', data),
+  acceptInvitation: (data) => api.post('/auth/accept-invitation', data),
 
   /**
    * Resend OTP
@@ -55,6 +56,18 @@ export const adminApi = {
    * Create a new customer
    */
   createCustomer: (data) => api.post('/admin/customers', data),
+  getCustomers: (search = '') => api.get(`/admin/customers?search=${encodeURIComponent(search)}`),
+};
+
+export const customerApi = {
+  getProfile: () => api.get('/customer/profile'),
+  getDashboard: () => api.get('/customer/dashboard'),
+  getInvoices: () => api.get('/customer/invoices'),
+  getPayments: () => api.get('/customer/payments'),
+
+  // Admin / Accountant actions
+  createCustomer: (data) => api.post('/admin/customers', data),
+  getCustomers: (search = '') => api.get(`/admin/customers?search=${encodeURIComponent(search)}`),
 };
 
 export default authApi;

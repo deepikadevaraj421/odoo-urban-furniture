@@ -54,10 +54,15 @@ const createAndSendOtp = async (userId, email) => {
     },
   });
 
+  // Log OTP in development mode for easy testing
+  if (env.NODE_ENV === 'development') {
+    console.log(`[DEV OTP] Generated OTP for ${email}: ${plainOtp}`);
+  }
+
   // Send OTP via email
   await sendOtpEmail(email, plainOtp);
 
-  return true;
+  return plainOtp;
 };
 
 /**

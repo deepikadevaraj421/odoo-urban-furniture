@@ -13,7 +13,11 @@ import AddAccountant from '../features/admin/pages/AddAccountant';
 import AddUser from '../features/admin/pages/AddUser';
 import SalesAccountantDashboard from '../features/accountant/pages/SalesAccountantDashboard';
 import PurchaseAccountantDashboard from '../features/accountant/pages/PurchaseAccountantDashboard';
+import CustomerManagement from '../features/admin/pages/CustomerManagement';
 import CustomerDashboard from '../features/customer/pages/CustomerDashboard';
+import CustomerInvoices from '../features/customer/pages/CustomerInvoices';
+import CustomerPayments from '../features/customer/pages/CustomerPayments';
+import CustomerProfile from '../features/customer/pages/CustomerProfile';
 
 const AppRoutes = () => {
   return (
@@ -45,8 +49,18 @@ const AppRoutes = () => {
       <Route
         path={ROUTES.ADD_USER}
         element={
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
             <AddUser />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Shared Customer Management (Admin & Accountant) */}
+      <Route
+        path={ROUTES.CUSTOMER_MANAGEMENT}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <CustomerManagement />
           </ProtectedRoute>
         }
       />
@@ -77,12 +91,36 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Customer Protected Route */}
+      {/* Customer Protected Routes */}
       <Route
         path={ROUTES.CUSTOMER_DASHBOARD}
         element={
           <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
             <CustomerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.CUSTOMER_INVOICES}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+            <CustomerInvoices />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.CUSTOMER_PAYMENTS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+            <CustomerPayments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.CUSTOMER_PROFILE}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+            <CustomerProfile />
           </ProtectedRoute>
         }
       />

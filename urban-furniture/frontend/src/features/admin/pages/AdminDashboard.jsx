@@ -23,12 +23,12 @@ const AdminDashboard = () => {
 
           <div
             className="action-card"
-            onClick={() => navigate(ROUTES.ADD_USER)}
+            onClick={() => navigate(ROUTES.CUSTOMER_MANAGEMENT)}
           >
-            <div className="action-icon">➕ 👤</div>
-            <h3>Add User</h3>
-            <p>Register a new Customer / User account with basic profile details and auto-generated customer code.</p>
-            <button className="btn-action">+ Add User</button>
+            <div className="action-icon">🪑 👥</div>
+            <h3>Customer Management</h3>
+            <p>Search, register, and manage customer accounts by Customer ID, Name, Email, or Mobile.</p>
+            <button className="btn-action">Manage Customers</button>
           </div>
         </div>
       </main>

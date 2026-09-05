@@ -11,7 +11,13 @@ router.use(authorize('CUSTOMER'));
 // Profile — ownership enforced via JWT userId
 router.get('/profile', customerController.getProfile);
 
-// Dashboard placeholder
+// Dashboard
 router.get('/dashboard', customerController.getDashboard);
+
+// Invoices — strictly isolated to authenticated Customer ID
+router.get('/invoices', customerController.getInvoices);
+
+// Payments — strictly isolated to authenticated Customer ID
+router.get('/payments', customerController.getPayments);
 
 module.exports = router;

@@ -10,17 +10,19 @@ const { createAndSendOtp, verifyOtp } = require('./otp.service');
 const registerAdmin = async ({ name, email, password }) => {
   // Check if an ADMIN already exists
   const existingAdmin = await prisma.user.findFirst({
-    where: { role: 'ADMIN', status: 'ACTIVE' },
+    where: { role: 'ADMIN' },
   });
 
   if (existingAdmin) {
-    return {
-      success: false,
-      message: 'Admin account already exists. Only one Admin account is allowed. Please login.',
-    };
+    if (existingAdmin.status === 'ACTIVE' || existingAdmin.email !== email) {
+      return {
+        success: false,
+        message: 'Admin account already exists. Only one Admin account is allowed. Please login.',
+      };
+    }
   }
 
-  // Check email uniqueness
+  // Check email uniqueness among non-admin roles
   const existingEmail = await prisma.user.findUnique({
     where: { email },
   });
@@ -57,12 +59,13 @@ const registerAdmin = async ({ name, email, password }) => {
   }
 
   // Send registration OTP
-  await createAndSendOtp(user.id, user.email);
+  const plainOtp = await createAndSendOtp(user.id, user.email);
 
   return {
     success: true,
     requiresOtp: true,
     userId: user.id,
+    devOtp: process.env.NODE_ENV === 'development' ? plainOtp : undefined,
     message: 'OTP sent to your email for Admin setup verification.',
   };
 };
@@ -198,6 +201,62 @@ const loginAccountant = async (email, password) => {
 };
 
 /**
+ * Customer Login — Registered Email + Password (NO OTP)
+ */
+const loginCustomer = async (email, password) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { customer: true },
+  });
+
+  if (!user || user.role !== 'CUSTOMER' || !user.customer) {
+    return { success: false, message: 'Invalid email or password.' };
+  }
+
+  if (user.status === 'INVITED') {
+    return {
+      success: false,
+      message: 'Your account is pending activation. Please check your email and accept your invitation.',
+    };
+  }
+
+  if (user.status !== 'ACTIVE') {
+    return { success: false, message: 'Account is inactive or disabled. Contact administrator.' };
+  }
+
+  if (!user.passwordHash) {
+    return {
+      success: false,
+      message: 'Password not set. Please accept your invitation email first.',
+    };
+  }
+
+  const isPasswordValid = await comparePassword(password, user.passwordHash);
+  if (!isPasswordValid) {
+    return { success: false, message: 'Invalid email or password.' };
+  }
+
+  // Generate JWT immediately — NO OTP
+  const token = generateToken({ userId: user.id, role: user.role });
+
+  return {
+    success: true,
+    requiresOtp: false,
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      customerCode: user.customer.customerCode,
+      mobile: user.customer.mobile,
+      address: user.customer.address,
+    },
+    redirectTo: '/customer/dashboard',
+  };
+};
+
+/**
  * Resend OTP for Admin registration
  */
 const resendOtp = async (userId) => {
@@ -237,6 +296,13 @@ const getCurrentUser = async (userId) => {
           accountantType: true,
         },
       },
+      customer: {
+        select: {
+          customerCode: true,
+          mobile: true,
+          address: true,
+        },
+      },
     },
   });
 
@@ -252,6 +318,7 @@ module.exports = {
   verifyAdminRegistrationOtp,
   loginAdmin,
   loginAccountant,
+  loginCustomer,
   resendOtp,
   getCurrentUser,
 };

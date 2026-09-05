@@ -25,4 +25,10 @@ router.get(
   accountantController.getPurchaseDashboard
 );
 
+// Customer management — accessible by accountants
+const customerController = require('../customer/customer.controller');
+router.post('/customers', customerController.createCustomerValidation, customerController.createCustomer);
+router.get('/customers', customerController.getCustomers);
+router.post('/customers/:id/resend-invitation', customerController.resendInvitation);
+
 module.exports = router;

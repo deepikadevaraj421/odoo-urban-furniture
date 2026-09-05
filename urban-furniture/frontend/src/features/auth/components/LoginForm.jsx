@@ -71,7 +71,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="admin@urbanfurniture.com"
+                placeholder="Enter your email"
                 required
                 className="form-input"
               />
@@ -84,7 +84,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 required
                 className="form-input"
               />
@@ -102,7 +102,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="arun@gmail.com"
+                placeholder="Enter your email"
                 required
                 className="form-input"
               />
@@ -115,7 +115,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 required
                 className="form-input"
               />
@@ -124,16 +124,39 @@ const LoginForm = ({ onSubmit, loading, error }) => {
         )}
 
         {loginType === LOGIN_TYPES.CUSTOMER && (
-          <div className="placeholder-note text-center" style={{ margin: '20px 0' }}>
-            <p style={{ color: '#9ca3af' }}>Customer authentication will be implemented in a subsequent phase.</p>
-          </div>
+          <>
+            <div className="form-group">
+              <label htmlFor="customer-email">Registered Email Address</label>
+              <input
+                id="customer-email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                required
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="customer-password">Password</label>
+              <input
+                id="customer-password"
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+                className="form-input"
+              />
+            </div>
+          </>
         )}
 
-        {loginType !== LOGIN_TYPES.CUSTOMER && (
-          <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? 'Authenticating...' : 'Login'}
-          </button>
-        )}
+        <button type="submit" disabled={loading} className="btn-primary">
+          {loading ? 'Authenticating...' : 'Login'}
+        </button>
 
         {loginType === LOGIN_TYPES.ADMIN && (
           <div className="resend-container" style={{ marginTop: '16px' }}>

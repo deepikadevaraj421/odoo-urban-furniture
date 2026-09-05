@@ -121,56 +121,13 @@ const getAccountants = async () => {
   };
 };
 
+const { createCustomer: customerServiceCreateCustomer } = require('../customer/customer.service');
+
 /**
- * Create Customer account (Admin only - placeholder)
+ * Create Customer account (Admin & Accountant)
  */
 const createCustomer = async (data, adminId) => {
-  const { name, email, mobile, address } = data;
-
-  const existingEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingEmail) {
-    return { success: false, message: 'A user with this email already exists.' };
-  }
-
-  const customerCode = await generateCustomerCode();
-
-  const result = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        name,
-        email,
-        role: 'CUSTOMER',
-        status: 'ACTIVE',
-        createdBy: adminId,
-      },
-    });
-
-    const customer = await tx.customer.create({
-      data: {
-        userId: user.id,
-        customerCode,
-        mobile,
-        address,
-      },
-    });
-
-    return { user, customer };
-  });
-
-  return {
-    success: true,
-    message: 'Customer created successfully.',
-    customer: {
-      id: result.customer.id,
-      userId: result.user.id,
-      name: result.user.name,
-      email: result.user.email,
-      customerCode: result.customer.customerCode,
-      mobile: result.customer.mobile,
-      address: result.customer.address,
-      status: result.user.status,
-    },
-  };
+  return customerServiceCreateCustomer(data, adminId);
 };
 
 module.exports = { createAccountant, getAccountants, createCustomer };
