@@ -11,7 +11,7 @@ router.post('/admin/verify-otp', authController.verifyAdminOtpValidation, authCo
 router.post('/admin/login', authController.adminLoginValidation, authController.loginAdmin);
 router.post('/accountant/login', authController.accountantLoginValidation, authController.loginAccountant);
 router.post('/customer/login', authController.customerLoginValidation, authController.loginCustomer);
-router.post('/login', authController.login);
+router.post('/login', authController.loginValidation, authController.login);
 
 // Public Invitation Routes
 router.get('/accountant/invitation-info', authController.getInvitationInfo);

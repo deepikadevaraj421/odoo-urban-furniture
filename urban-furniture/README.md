@@ -58,10 +58,10 @@ Frontend will start on `http://localhost:5173`.
 
 ---
 
-## Default Admin Credentials
+## Initial Admin Account Setup
 
-- **Email**: `admin@urbanfurniture.com`
-- **Password**: `Admin@123`
+The system starts with no default admin accounts.
+Create the initial administrator account using **"Register Initial Admin Account"** at `/admin/register`.
 
 ---
 

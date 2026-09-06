@@ -8,13 +8,21 @@ const INVITATION_EXPIRY_HOURS = 48;
 /**
  * Generate and send an Accountant or Customer Invitation
  */
-const createAndSendInvitation = async ({ userId, email, name, accountantCode, accountantType, customerCode }) => {
+const createAndSendInvitation = async ({
+  userId,
+  email,
+  name,
+  accountantCode,
+  accountantType,
+  customerCode,
+  frontendOrigin,
+}) => {
   // Invalidate any existing invitations for this user
   await prisma.invitation.deleteMany({
     where: { userId },
   });
 
-  // Generate cryptographically secure random token
+  // Generate cryptographically secure random token (32 bytes hex)
   const rawToken = crypto.randomBytes(32).toString('hex');
 
   // Hash token before storing in DB
@@ -33,8 +41,8 @@ const createAndSendInvitation = async ({ userId, email, name, accountantCode, ac
   });
 
   // Build frontend accept-invitation URL
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const invitationLink = `${frontendUrl}/accept-invitation?token=${rawToken}&id=${invitation.id}`;
+  const baseUrl = frontendOrigin || process.env.FRONTEND_URL || 'http://localhost:5173';
+  const invitationLink = `${baseUrl}/accept-invitation?token=${rawToken}&id=${invitation.id}`;
 
   // Send invitation email based on role
   let sendInfo;
@@ -53,33 +61,73 @@ const createAndSendInvitation = async ({ userId, email, name, accountantCode, ac
 
 /**
  * Verify invitation token details for the frontend preview page
+ * Supports lookup by invitationId, or fallback to scanning pending tokens if invitationId is omitted
  */
 const getInvitationDetails = async (invitationId, rawToken) => {
-  const invitation = await prisma.invitation.findUnique({
-    where: { id: invitationId },
-    include: {
-      user: {
-        include: {
-          accountant: true,
-          customer: true,
+  if (!rawToken) {
+    return { valid: false, message: 'Invitation token is missing from the link.' };
+  }
+
+  let invitation = null;
+
+  // 1. Try finding by ID if provided
+  if (invitationId && invitationId.trim() !== '') {
+    invitation = await prisma.invitation.findUnique({
+      where: { id: invitationId.trim() },
+      include: {
+        user: {
+          include: {
+            accountant: true,
+            customer: true,
+          },
         },
       },
-    },
-  });
+    });
+  }
+
+  // 2. If not found by ID or ID was not provided, scan unaccepted invitations matching token
+  if (!invitation) {
+    const candidateInvitations = await prisma.invitation.findMany({
+      where: {
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        user: {
+          include: {
+            accountant: true,
+            customer: true,
+          },
+        },
+      },
+    });
+
+    for (const cand of candidateInvitations) {
+      try {
+        const matches = await bcrypt.compare(rawToken, cand.tokenHash);
+        if (matches) {
+          invitation = cand;
+          break;
+        }
+      } catch (err) {
+        // Continue checking others
+      }
+    }
+  }
 
   if (!invitation) {
     return { valid: false, message: 'Invalid or expired invitation link.' };
   }
 
   if (invitation.acceptedAt) {
-    return { valid: false, message: 'This invitation has already been used.' };
+    return { valid: false, message: 'This invitation has already been used. Please log in directly.' };
   }
 
   if (new Date() > invitation.expiresAt) {
-    return { valid: false, message: 'This invitation link has expired. Please contact Admin/Accountant.' };
+    return { valid: false, message: 'This invitation link has expired. Please contact the administrator for a new invitation.' };
   }
 
-  // Compare token hash
+  // Compare token hash to confirm validity
   const isTokenValid = await bcrypt.compare(rawToken, invitation.tokenHash);
   if (!isTokenValid) {
     return { valid: false, message: 'Invalid invitation token.' };
@@ -100,23 +148,32 @@ const getInvitationDetails = async (invitationId, rawToken) => {
 };
 
 /**
- * Accept invitation and set accountant password
+ * Accept invitation and set account password
  */
 const acceptInvitationAndSetPassword = async (invitationId, rawToken, newPassword) => {
-  // Check details
+  if (!newPassword || newPassword.length < 6) {
+    return { success: false, message: 'Password must be at least 6 characters long.' };
+  }
+
+  // Verify invitation details
   const details = await getInvitationDetails(invitationId, rawToken);
   if (!details.valid) {
     return { success: false, message: details.message };
   }
 
+  const targetInvitationId = details.invitation.id;
   const invitation = await prisma.invitation.findUnique({
-    where: { id: invitationId },
+    where: { id: targetInvitationId },
   });
 
-  // Hash new password
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  if (!invitation) {
+    return { success: false, message: 'Invitation record not found.' };
+  }
 
-  // Update user and invitation in transaction
+  // Hash new password
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  // Update user and invitation in atomic transaction
   await prisma.$transaction([
     prisma.user.update({
       where: { id: invitation.userId },

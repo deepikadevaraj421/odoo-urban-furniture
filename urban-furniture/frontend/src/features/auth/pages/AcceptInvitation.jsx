@@ -26,13 +26,13 @@ const AcceptInvitation = () => {
 
   useEffect(() => {
     const fetchInfo = async () => {
-      if (!token || !invitationId) {
-        setError('Invalid invitation link. Token or ID is missing.');
+      if (!token) {
+        setError('Invalid invitation link. Token is missing.');
         setLoading(false);
         return;
       }
       try {
-        const response = await authApi.getInvitationInfo(invitationId, token);
+        const response = await authApi.getInvitationInfo(invitationId || '', token);
         setInvitationInfo(response.data.invitation);
       } catch (err) {
         setError(err.response?.data?.message || 'Invalid or expired invitation link.');
@@ -61,7 +61,7 @@ const AcceptInvitation = () => {
 
     try {
       const response = await authApi.acceptInvitation({
-        invitationId,
+        invitationId: invitationId || invitationInfo?.id || '',
         token,
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword,

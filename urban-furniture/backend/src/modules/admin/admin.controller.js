@@ -51,7 +51,7 @@ const getAccountants = async (req, res, next) => {
  */
 const createCustomerValidation = [
   body('name').trim().notEmpty().withMessage('Full name is required.'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required.'),
+  body('email').isEmail().normalizeEmail({ gmail_remove_subaddress: false }).withMessage('Valid email is required.'),
   body('mobile').trim().notEmpty().withMessage('Mobile number is required.'),
   body('address').optional().trim(),
   validateRequest,
@@ -59,7 +59,8 @@ const createCustomerValidation = [
 
 const createCustomer = async (req, res, next) => {
   try {
-    const result = await adminService.createCustomer(req.body, req.user.userId);
+    const origin = req.get('origin') || req.headers?.origin;
+    const result = await adminService.createCustomer(req.body, req.user.userId, origin);
 
     if (!result.success) {
       return res.status(400).json(result);
@@ -71,10 +72,40 @@ const createCustomer = async (req, res, next) => {
   }
 };
 
+/**
+ * PUT /api/admin/accountants/:id/permissions
+ * Update permissions for an accountant (Admin only)
+ */
+const updatePermissionsValidation = [
+  body('permissions')
+    .isArray()
+    .withMessage('Permissions must be an array of permission strings.'),
+  validateRequest,
+];
+
+const updatePermissions = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { permissions } = req.body;
+
+    const result = await adminService.updateAccountantPermissions(id, permissions);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createAccountant,
   createAccountantValidation,
   getAccountants,
+  updatePermissions,
+  updatePermissionsValidation,
   createCustomer,
   createCustomerValidation,
 };

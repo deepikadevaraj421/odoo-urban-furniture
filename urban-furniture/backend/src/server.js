@@ -1,10 +1,11 @@
 const app = require('./app');
 const env = require('./config/env');
 const { verifyTransporter } = require('./utils/email');
+const { bootstrapAdmin } = require('./modules/auth/admin.bootstrap');
 
 const PORT = env.PORT;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log('');
   console.log('═══════════════════════════════════════════════');
   console.log('  🏢  Urban Furniture ERP — Backend Server');
@@ -15,5 +16,6 @@ app.listen(PORT, () => {
   console.log(`  📦  Environment: ${env.NODE_ENV}`);
   console.log('═══════════════════════════════════════════════');
   console.log('');
+  await bootstrapAdmin();
   verifyTransporter();
 });

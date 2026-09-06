@@ -22,47 +22,24 @@ const adminRegisterValidation = [
   validateRequest,
 ];
 
-const registerAdmin = async (req, res, next) => {
-  try {
-    const result = await authService.registerAdmin(req.body);
-
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
-
-    return res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
+const registerAdmin = async (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Admin registration is disabled. The official Admin account is already configured. Please log in with your credentials.',
+  });
 };
 
 /**
  * POST /api/auth/admin/verify-otp
- * Verify Admin Registration OTP
+ * Admin Registration OTP is disabled
  */
-const verifyAdminOtpValidation = [
-  body('userId').notEmpty().withMessage('User ID is required.'),
-  body('otp')
-    .isLength({ min: 6, max: 6 })
-    .withMessage('OTP must be 6 digits.')
-    .isNumeric()
-    .withMessage('OTP must contain only numbers.'),
-  validateRequest,
-];
+const verifyAdminOtpValidation = [validateRequest];
 
-const verifyAdminOtp = async (req, res, next) => {
-  try {
-    const { userId, otp } = req.body;
-    const result = await authService.verifyAdminRegistrationOtp(userId, otp);
-
-    if (!result.success) {
-      return res.status(401).json(result);
-    }
-
-    return res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
+const verifyAdminOtp = async (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Admin registration OTP verification is disabled.',
+  });
 };
 
 /**
@@ -123,10 +100,10 @@ const getInvitationInfo = async (req, res, next) => {
   try {
     const { id, token } = req.query;
 
-    if (!id || !token) {
+    if (!token) {
       return res.status(400).json({
         success: false,
-        message: 'Invitation ID and token are required.',
+        message: 'Invitation token is required.',
       });
     }
 
@@ -150,14 +127,14 @@ const getInvitationInfo = async (req, res, next) => {
 
 /**
  * POST /api/auth/accountant/accept-invitation or set-password
- * Set password and activate Accountant account
+ * Set password and activate Accountant or Customer account
  */
 const acceptInvitationValidation = [
-  body('invitationId').notEmpty().withMessage('Invitation ID is required.'),
+  body('invitationId').optional().trim(),
   body('token').notEmpty().withMessage('Invitation token is required.'),
   body('newPassword')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters.'),
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters.'),
   body('confirmPassword').custom((value, { req }) => {
     if (value !== req.body.newPassword) {
       throw new Error('Passwords do not match.');
@@ -191,7 +168,14 @@ const acceptInvitation = async (req, res, next) => {
  * Customer Normal Login (NO OTP)
  */
 const customerLoginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid registered email is required.'),
+  body('email').isEmail().normalizeEmail({ gmail_remove_subaddress: false }).withMessage('Valid registered email is required.'),
+  body('password').notEmpty().withMessage('Password is required.'),
+  validateRequest,
+];
+
+const loginValidation = [
+  body('loginType').isIn(['ADMIN', 'ACCOUNTANT', 'CUSTOMER']).withMessage('Invalid login type specified.'),
+  body('email').trim().isEmail().normalizeEmail().withMessage('Valid email is required.'),
   body('password').notEmpty().withMessage('Password is required.'),
   validateRequest,
 ];
@@ -282,6 +266,7 @@ module.exports = {
   accountantLoginValidation,
   loginCustomer,
   customerLoginValidation,
+  loginValidation,
   getInvitationInfo,
   acceptInvitation,
   acceptInvitationValidation,

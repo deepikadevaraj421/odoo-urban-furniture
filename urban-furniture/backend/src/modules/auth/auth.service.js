@@ -3,102 +3,27 @@ const { hashPassword, comparePassword } = require('./password.service');
 const { generateToken } = require('./jwt.service');
 const { createAndSendOtp, verifyOtp } = require('./otp.service');
 
+const normalizeLoginEmail = (email) => email.trim().toLowerCase();
+
 /**
  * Initial One-Time Admin Registration
- * - Allowed ONLY if no ADMIN account currently exists in the database.
+ * Admin Self-Registration is permanently disabled.
+ * The official Admin account is created during setup and managed by the system.
  */
-const registerAdmin = async ({ name, email, password }) => {
-  // Check if an ADMIN already exists
-  const existingAdmin = await prisma.user.findFirst({
-    where: { role: 'ADMIN' },
-  });
-
-  if (existingAdmin) {
-    if (existingAdmin.status === 'ACTIVE' || existingAdmin.email !== email) {
-      return {
-        success: false,
-        message: 'Admin account already exists. Only one Admin account is allowed. Please login.',
-      };
-    }
-  }
-
-  // Check email uniqueness among non-admin roles
-  const existingEmail = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (existingEmail && existingEmail.role !== 'ADMIN') {
-    return { success: false, message: 'A user with this email already exists.' };
-  }
-
-  // Hash password
-  const passwordHash = await hashPassword(password);
-
-  let user = existingEmail;
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        passwordHash,
-        role: 'ADMIN',
-        status: 'PENDING_VERIFICATION',
-        createdBy: 'SELF_REGISTRATION',
-      },
-    });
-  } else {
-    // Update existing pending user
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        name,
-        passwordHash,
-        status: 'PENDING_VERIFICATION',
-      },
-    });
-  }
-
-  // Send registration OTP
-  const plainOtp = await createAndSendOtp(user.id, user.email);
-
+const registerAdmin = async () => {
   return {
-    success: true,
-    requiresOtp: true,
-    userId: user.id,
-    devOtp: process.env.NODE_ENV === 'development' ? plainOtp : undefined,
-    message: 'OTP sent to your email for Admin setup verification.',
+    success: false,
+    message: 'Admin self-registration is disabled. The official Admin account is already configured. Please log in with your credentials.',
   };
 };
 
 /**
- * Verify Admin Registration OTP and Activate Admin
+ * Admin OTP verification is disabled.
  */
-const verifyAdminRegistrationOtp = async (userId, otp) => {
-  const result = await verifyOtp(userId, otp);
-
-  if (!result.valid) {
-    return { success: false, message: result.message };
-  }
-
-  // Activate Admin account
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { status: 'ACTIVE' },
-  });
-
-  // Generate JWT token
-  const token = generateToken({ userId: user.id, role: user.role });
-
+const verifyAdminRegistrationOtp = async () => {
   return {
-    success: true,
-    token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
-    redirectTo: '/admin/dashboard',
+    success: false,
+    message: 'Admin self-registration OTP verification is disabled.',
   };
 };
 
@@ -106,8 +31,9 @@ const verifyAdminRegistrationOtp = async (userId, otp) => {
  * Admin Normal Login — Email + Password (NO OTP)
  */
 const loginAdmin = async (email, password) => {
+  const normalizedEmail = normalizeLoginEmail(email);
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
   });
 
   if (!user || user.role !== 'ADMIN') {
@@ -144,8 +70,9 @@ const loginAdmin = async (email, password) => {
  * Accountant Login — Registered Email + Password (NO OTP)
  */
 const loginAccountant = async (email, password) => {
+  const normalizedEmail = normalizeLoginEmail(email);
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
     include: { accountant: true },
   });
 
@@ -195,6 +122,7 @@ const loginAccountant = async (email, password) => {
       role: user.role,
       accountantType,
       accountantCode: user.accountant.accountantCode,
+      permissions: user.accountant.permissions || [],
     },
     redirectTo,
   };
@@ -204,8 +132,9 @@ const loginAccountant = async (email, password) => {
  * Customer Login — Registered Email + Password (NO OTP)
  */
 const loginCustomer = async (email, password) => {
+  const normalizedEmail = normalizeLoginEmail(email);
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
     include: { customer: true },
   });
 
@@ -290,10 +219,12 @@ const getCurrentUser = async (userId) => {
       status: true,
       accountant: {
         select: {
+          id: true,
           accountantCode: true,
           employeeId: true,
           department: true,
           accountantType: true,
+          permissions: true,
         },
       },
       customer: {

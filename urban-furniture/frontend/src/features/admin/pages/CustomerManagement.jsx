@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../../../components/layout/Header';
+﻿import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../services/api';
-import { ROUTES } from '../../../utils/constants';
+import ErpLayout from '../../../components/layout/ErpLayout';
+import { formatDate, formatCurrency } from '../../../utils/formatters';
 
 const CustomerManagement = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   // Choose base endpoint based on logged-in user role
-  const baseEndpoint = user?.role === 'ACCOUNTANT' ? '/accountant/customers' : '/admin/customers';
+  const baseEndpoint =
+    user?.role === 'ACCOUNTANT' ? '/accountant/customers' : '/admin/customers';
 
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +31,9 @@ const CustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get(`${baseEndpoint}?search=${encodeURIComponent(query)}`);
+      const res = await api.get(
+        `${baseEndpoint}?search=${encodeURIComponent(query)}`
+      );
       setCustomers(res.data.customers || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load customers.');
@@ -63,7 +64,9 @@ const CustomerManagement = () => {
     try {
       const res = await api.post(baseEndpoint, formData);
       const data = res.data;
-      setModalSuccess(`Customer created successfully! Customer ID: ${data.customer.customerCode}. Invitation email sent.`);
+      setModalSuccess(
+        `Customer created! ID: ${data.customer.customerCode}. Invitation email sent.`
+      );
       setFormData({ name: '', email: '', mobile: '', address: '' });
       fetchCustomers(searchQuery);
       setTimeout(() => {
@@ -71,7 +74,9 @@ const CustomerManagement = () => {
         setShowAddModal(false);
       }, 2500);
     } catch (err) {
-      setModalError(err.response?.data?.message || 'Failed to create customer.');
+      setModalError(
+        err.response?.data?.message || 'Failed to create customer.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -85,234 +90,298 @@ const CustomerManagement = () => {
     setError('');
     setActionSuccess('');
     try {
-      const res = await api.post(`${baseEndpoint}/${customerId}/resend-invitation`);
+      const res = await api.post(
+        `${baseEndpoint}/${customerId}/resend-invitation`
+      );
       setActionSuccess(res.data.message || 'Invitation resent successfully.');
       fetchCustomers(searchQuery);
       setTimeout(() => setActionSuccess(''), 4000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resend invitation.');
+      setError(
+        err.response?.data?.message || 'Failed to resend invitation.'
+      );
     } finally {
       setResendLoadingId(null);
     }
   };
 
   return (
-    <div className="dashboard-layout">
-      <Header title="Urban Furniture ERP" subtitle="Customer Directory" />
+    <ErpLayout title="Urban Furniture ERP" subtitle="Customer Directory">
+      {/* ── Page Header ─────────────────────────────────────── */}
+      <div className="cd-page-header">
+        <div className="cd-page-header-text">
+          <h2 className="cd-page-title">Customer Directory</h2>
+          <p className="cd-page-subtitle">
+            Search and manage customer accounts by Customer ID, Name, Email, or
+            Mobile
+          </p>
+        </div>
+        <button
+          id="btn-add-customer"
+          onClick={() => setShowAddModal(true)}
+          className="btn btn-primary cd-btn-add"
+        >
+          <span aria-hidden="true">+</span> Add New Customer
+        </button>
+      </div>
 
-      <main className="dashboard-main">
-        <div className="flex-between mb-4">
-          <div>
-            <h2>Customer Directory</h2>
-            <p className="text-muted" style={{ fontSize: '0.875rem' }}>
-              Search and manage customer accounts by Customer ID, Name, Email, or Mobile
+      {/* ── Search Card ──────────────────────────────────────── */}
+      <div className="cd-search-card">
+        <label htmlFor="customer-search" className="cd-search-label">
+          🔎&nbsp; Search Customers
+        </label>
+        <input
+          id="customer-search"
+          type="text"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder="Search by Customer ID (e.g. CUS-00005), Name, Email, or Mobile…"
+          className="form-input cd-search-input"
+        />
+      </div>
+
+      {/* ── Alerts ───────────────────────────────────────────── */}
+      {error && (
+        <div className="alert alert-error cd-alert">{error}</div>
+      )}
+      {actionSuccess && (
+        <div className="alert alert-success cd-alert">{actionSuccess}</div>
+      )}
+
+      {/* ── Customer Table ───────────────────────────────────── */}
+      <div className="erp-card-table">
+        <div className="erp-table-header">
+          <h3>All Customers</h3>
+          <span className="cd-record-count">
+            {!loading && `${customers.length} record${customers.length !== 1 ? 's' : ''}`}
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="cd-loading">
+            <span className="cd-loading-spinner" />
+            Loading customer directory…
+          </div>
+        ) : customers.length === 0 ? (
+          <div className="cd-empty-state">
+            <div className="cd-empty-icon">👥</div>
+            <h4>No customer records found</h4>
+            <p>
+              {searchQuery
+                ? `No match for "${searchQuery}". Try a different search or add a new customer.`
+                : 'Click "+ Add New Customer" to register your first customer.'}
             </p>
           </div>
-          <button onClick={() => setShowAddModal(true)} className="btn btn-primary">
-            + Add New Customer
-          </button>
-        </div>
-
-        {/* Search Bar Card */}
-        <div className="card mb-4" style={{ padding: '1.25rem' }}>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label
-              htmlFor="customer-search"
-              style={{
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '0.5rem',
-                display: 'block'
-              }}
-            >
-              🔍 Search Existing Customers
-            </label>
-            <input
-              id="customer-search"
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              placeholder="Search by Customer ID (e.g. CUS-00005), Name, Email, or Mobile..."
-              className="form-input"
-            />
-          </div>
-        </div>
-
-        {error && <div className="alert alert-error mb-4">{error}</div>}
-        {actionSuccess && <div className="alert alert-success mb-4">{actionSuccess}</div>}
-
-        {/* Customers Table Container */}
-        <div className="table-container card" style={{ padding: 0 }}>
-          {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Loading customers...
-            </div>
-          ) : customers.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">👥</div>
-              <h3>No customer records found</h3>
-              <p>
-                {searchQuery
-                  ? `No customer matched "${searchQuery}". Click "+ Add New Customer" to register.`
-                  : 'Click "+ Add New Customer" to register your first customer.'}
-              </p>
-            </div>
-          ) : (
-            <table className="table-custom">
+        ) : (
+          <div className="erp-table-scroll">
+            <table className="erp-table cd-table">
               <thead>
                 <tr>
-                  <th>Customer ID</th>
-                  <th>Full Name</th>
-                  <th>Email Address</th>
-                  <th>Mobile</th>
-                  <th>Status</th>
-                  <th>Created Date</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th className="cd-col-id">Customer ID</th>
+                  <th className="cd-col-name">Full Name</th>
+                  <th className="cd-col-email">Email Address</th>
+                  <th className="cd-col-mobile">Mobile</th>
+                  <th className="cd-col-status">Status</th>
+                  <th className="cd-col-date">Created Date</th>
+                  <th className="cd-col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {customers.map((customer) => (
                   <tr key={customer.id}>
-                    <td>
-                      <span style={{ fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace', fontSize: '0.95rem' }}>
+                    {/* Customer ID */}
+                    <td className="cd-col-id">
+                      <span className="cd-customer-code">
                         {customer.customerCode}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600 }}>{customer.name}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{customer.email}</td>
-                    <td>{customer.mobile}</td>
-                    <td>
-                      <span className={`badge ${customer.status === 'ACTIVE' ? 'badge-success' : 'badge-warning'}`}>
-                        {customer.status}
+
+                    {/* Full Name */}
+                    <td
+                      className="cd-col-name cd-cell-truncate"
+                      title={customer.name}
+                    >
+                      <span className="cd-name-text">{customer.name}</span>
+                    </td>
+
+                    {/* Email */}
+                    <td
+                      className="cd-col-email cd-cell-truncate"
+                      title={customer.email}
+                    >
+                      {customer.email}
+                    </td>
+
+                    {/* Mobile */}
+                    <td className="cd-col-mobile">
+                      {customer.mobile || <span className="cd-na">—</span>}
+                    </td>
+
+                    {/* Status */}
+                    <td className="cd-col-status">
+                      <span
+                        className={`cd-badge ${
+                          customer.status === 'ACTIVE'
+                            ? 'cd-badge-active'
+                            : 'cd-badge-invited'
+                        }`}
+                      >
+                        {customer.status === 'ACTIVE' ? '● Active' : '○ Invited'}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      {new Date(customer.createdAt).toLocaleDateString()}
+
+                    {/* Created Date */}
+                    <td className="cd-col-date">
+                      {formatDate(customer.createdAt)}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
-                      {customer.status === 'INVITED' && (
+
+                    {/* Actions */}
+                    <td className="cd-col-actions">
+                      {customer.status === 'INVITED' ? (
                         <button
                           onClick={() => handleResendInvitation(customer.id)}
                           disabled={resendLoadingId === customer.id}
-                          className="btn btn-outline"
-                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                          className="btn btn-secondary btn-sm cd-btn-resend"
                         >
-                          {resendLoadingId === customer.id ? 'Sending...' : '✉️ Resend Invitation'}
+                          {resendLoadingId === customer.id
+                            ? 'Sending…'
+                            : '✉ Resend Invite'}
                         </button>
+                      ) : (
+                        <span className="cd-action-empty">—</span>
                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
-        {/* Add Customer Modal */}
-        {showAddModal && (
-          <div className="modal-backdrop">
-            <div className="modal-card">
-              <div className="flex-between mb-4">
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Register New Customer</h3>
-                  <p className="text-muted" style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
-                    Customer ID will be generated automatically (e.g. CUS-00001)
-                  </p>
-                </div>
+      {/* ── Add Customer Modal ───────────────────────────────── */}
+      {showAddModal && (
+        <div
+          className="cd-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
+          <div className="cd-modal-card">
+            {/* Modal Header */}
+            <div className="cd-modal-head">
+              <div>
+                <h3 id="modal-title" className="cd-modal-title">
+                  Register New Customer
+                </h3>
+                <p className="cd-modal-subtitle">
+                  Customer ID is auto-generated (e.g.&nbsp;CUS-00001)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="cd-modal-close"
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Alerts */}
+            {modalError && (
+              <div className="alert alert-error cd-alert">{modalError}</div>
+            )}
+            {modalSuccess && (
+              <div className="alert alert-success cd-alert">{modalSuccess}</div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleAddCustomerSubmit} className="cd-modal-form">
+              <div className="form-group">
+                <label htmlFor="cust-name" className="form-label">
+                  Full Name <span className="cd-required">*</span>
+                </label>
+                <input
+                  id="cust-name"
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleFormChange}
+                  placeholder="Enter full name"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cust-email" className="form-label">
+                  Email Address <span className="cd-required">*</span>
+                </label>
+                <input
+                  id="cust-email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleFormChange}
+                  placeholder="Enter email address"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cust-mobile" className="form-label">
+                  Mobile Number <span className="cd-required">*</span>
+                </label>
+                <input
+                  id="cust-mobile"
+                  type="text"
+                  name="mobile"
+                  value={formData.mobile}
+                  onChange={handleFormChange}
+                  placeholder="Enter mobile number"
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cust-address" className="form-label">
+                  Address
+                </label>
+                <textarea
+                  id="cust-address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleFormChange}
+                  placeholder="Enter address (optional)"
+                  rows={3}
+                  className="form-input cd-textarea"
+                />
+              </div>
+
+              <div className="cd-modal-actions">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                  className="btn btn-secondary"
                 >
-                  ✕
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn btn-primary"
+                >
+                  {submitting ? 'Creating…' : 'Register Customer'}
                 </button>
               </div>
-
-              {modalError && <div className="alert alert-error mb-4">{modalError}</div>}
-              {modalSuccess && <div className="alert alert-success mb-4">{modalSuccess}</div>}
-
-              <form onSubmit={handleAddCustomerSubmit}>
-                <div className="form-group">
-                  <label htmlFor="cust-name">Full Name *</label>
-                  <input
-                    id="cust-name"
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    placeholder="Enter full name"
-                    required
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="cust-email">Email Address *</label>
-                  <input
-                    id="cust-email"
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleFormChange}
-                    placeholder="Enter email address"
-                    required
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="cust-mobile">Mobile Number *</label>
-                  <input
-                    id="cust-mobile"
-                    type="text"
-                    name="mobile"
-                    value={formData.mobile}
-                    onChange={handleFormChange}
-                    placeholder="Enter mobile number"
-                    required
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="cust-address">Address</label>
-                  <textarea
-                    id="cust-address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleFormChange}
-                    placeholder="Enter address"
-                    rows={3}
-                    className="form-input"
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="btn btn-outline"
-                    style={{ flex: 1 }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="btn btn-primary"
-                    style={{ flex: 1 }}
-                  >
-                    {submitting ? 'Creating...' : 'Register Customer'}
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </ErpLayout>
   );
 };
 

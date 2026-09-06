@@ -20,6 +20,12 @@ router.get(
   adminController.getAccountants
 );
 
+router.put(
+  '/accountants/:id/permissions',
+  adminController.updatePermissionsValidation,
+  adminController.updatePermissions
+);
+
 // Customers / Users
 router.post(
   '/customers',

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { LOGIN_TYPES } from '../../../utils/constants';
 
 const EyeIcon = ({ open }) => (
@@ -84,7 +83,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="auth-form" noValidate>
+      <form onSubmit={handleSubmit} className="auth-form" noValidate autoComplete="off">
         <div className="form-group">
           <label htmlFor={`${loginType.toLowerCase()}-email`} className="form-label">
             {roleLabels[loginType].emailLabel}
@@ -97,7 +96,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
             onChange={handleChange}
             placeholder="Enter your email"
             required
-            autoComplete="email"
+            autoComplete="off"
             className="form-input"
           />
         </div>
@@ -115,7 +114,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
               onChange={handleChange}
               placeholder="Enter your password"
               required
-              autoComplete="current-password"
+              autoComplete="new-password"
               className="form-input"
             />
             <button
@@ -140,19 +139,15 @@ const LoginForm = ({ onSubmit, loading, error }) => {
         </button>
       </form>
 
-      {/* Footer links */}
+      {/* Footer info */}
       <div className="auth-divider">
-        {loginType === LOGIN_TYPES.ADMIN && (
-          <p>
-            First time setup?{' '}
-            <Link to="/admin/register" className="btn-link">
-              Register Initial Admin Account
-            </Link>
-          </p>
-        )}
-        {loginType !== LOGIN_TYPES.ADMIN && (
+        {loginType !== LOGIN_TYPES.ADMIN ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
             Your account is created by an administrator via invitation.
+          </p>
+        ) : (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+            Sign in with your configured administrator credentials.
           </p>
         )}
       </div>
