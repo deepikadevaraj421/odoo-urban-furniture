@@ -25,7 +25,13 @@ export const AuthProvider = ({ children }) => {
       if (storedToken) {
         try {
           const response = await authApi.getMe();
-          setUser(response.data.user);
+          const me = response.data.user;
+          if (me.accountant) {
+            me.permissions = me.accountant.permissions || [];
+            me.accountantType = me.accountant.accountantType;
+            me.accountantCode = me.accountant.accountantCode;
+          }
+          setUser(me);
           setToken(storedToken);
         } catch (error) {
           // Token invalid or expired
@@ -63,11 +69,47 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   }, []);
 
+  // Refresh user data from backend
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await authApi.getMe();
+      const me = response.data.user;
+      if (me.accountant) {
+        me.permissions = me.accountant.permissions || [];
+        me.accountantType = me.accountant.accountantType;
+        me.accountantCode = me.accountant.accountantCode;
+      }
+      setUser(me);
+      localStorage.setItem('uf_user', JSON.stringify(me));
+      return me;
+    } catch (err) {
+      console.error('Failed to refresh user profile:', err);
+    }
+  }, []);
+
+  /**
+   * Check whether the active user has a specific granular permission.
+   * Admins have full access to everything.
+   * Accountants check their effective permissions array.
+   */
+  const hasPermission = useCallback(
+    (permissionKey) => {
+      if (!user) return false;
+      if (user.role === 'ADMIN') return true;
+      if (user.role !== 'ACCOUNTANT') return false;
+      const userPerms = user.permissions || user.accountant?.permissions || [];
+      return userPerms.includes(permissionKey);
+    },
+    [user]
+  );
+
   const value = {
     user,
     token,
     loading,
     isAuthenticated,
+    hasPermission,
+    refreshUser,
     login,
     logout,
     updateUser,

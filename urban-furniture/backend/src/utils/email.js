@@ -141,10 +141,53 @@ const sendCustomerInvitationEmail = async (to, name, customerCode, invitationLin
   return info;
 };
 
+/**
+ * Send Vendor / Supplier Onboarding Confirmation Email
+ * Notifies supplier that their vendor account has been created in Urban Furniture ERP
+ */
+const sendVendorWelcomeEmail = async (to, name, companyName = 'Urban Furniture') => {
+  const mailOptions = {
+    from: `"Urban Furniture" <${env.SMTP_FROM}>`,
+    to,
+    subject: `Vendor Partner Registration Confirmation — ${companyName}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 32px; background: #1a1a2e; color: #e0e0e0; border-radius: 12px;">
+        <h2 style="color: #00d4aa; margin-bottom: 8px;">Urban Furniture</h2>
+        <p style="color: #a0a0b0; margin-bottom: 24px;">Vendor & Supplier Partnership</p>
+        <p style="font-size: 16px;">Dear <strong>${name}</strong>,</p>
+        <p style="color: #c0c0d0; line-height: 1.6;">
+          Your vendor profile has been successfully registered in our corporate enterprise accounting system.
+        </p>
+        
+        <div style="background: #16213e; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 6px 0;"><strong style="color: #00d4aa;">Partner Name:</strong> ${name}</p>
+          <p style="margin: 6px 0;"><strong style="color: #00d4aa;">Classification:</strong> Approved Vendor / Supplier</p>
+          <p style="margin: 6px 0;"><strong style="color: #00d4aa;">Registered Email:</strong> ${to}</p>
+          <p style="margin: 6px 0;"><strong style="color: #00d4aa;">Status:</strong> Active Supplier</p>
+        </div>
+
+        <p style="color: #c0c0d0; line-height: 1.6;">
+          Our procurement and accounts payable department will use these details for purchase orders, vendor bill receipts, and automated payment settlements.
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #2a2a4a; margin: 24px 0;">
+        <p style="color: #606070; font-size: 12px;">© Urban Furniture ERP — Procurement & Supply Chain</p>
+      </div>
+    `,
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  if (info.rejected && info.rejected.length > 0) {
+    throw new Error(`Email provider rejected recipient: ${info.rejected.join(', ')}`);
+  }
+  return info;
+};
+
 module.exports = {
   sendOtpEmail,
   sendAccountantInvitationEmail,
   sendCustomerInvitationEmail,
+  sendVendorWelcomeEmail,
   verifyTransporter,
   transporter,
 };

@@ -11,6 +11,9 @@ router.use(authorize('CUSTOMER'));
 // Profile — ownership enforced via JWT userId
 router.get('/profile', customerController.getProfile);
 
+// Orders - strictly isolated to authenticated Customer ID
+router.get('/orders', customerController.getOrders);
+
 // Dashboard
 router.get('/dashboard', customerController.getDashboard);
 

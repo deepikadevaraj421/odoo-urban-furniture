@@ -22,8 +22,12 @@ export const authApi = {
   /**
    * Get Invitation details for setup page (works for both Accountant and Customer)
    */
-  getInvitationInfo: (id, token) =>
-    api.get(`/auth/invitation-info?id=${id}&token=${token}`),
+  getInvitationInfo: (id, token) => {
+    const query = id
+      ? `id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`
+      : `token=${encodeURIComponent(token)}`;
+    return api.get(`/auth/invitation-info?${query}`);
+  },
 
   /**
    * Accept Invitation & Create Password
@@ -53,6 +57,12 @@ export const adminApi = {
   getAccountants: () => api.get('/admin/accountants'),
 
   /**
+   * Update accountant permissions in PostgreSQL
+   */
+  updateAccountantPermissions: (id, permissions) =>
+    api.put(`/admin/accountants/${id}/permissions`, { permissions }),
+
+  /**
    * Create a new customer
    */
   createCustomer: (data) => api.post('/admin/customers', data),
@@ -62,12 +72,14 @@ export const adminApi = {
 export const customerApi = {
   getProfile: () => api.get('/customer/profile'),
   getDashboard: () => api.get('/customer/dashboard'),
+  getOrders: () => api.get('/customer/orders'),
   getInvoices: () => api.get('/customer/invoices'),
   getPayments: () => api.get('/customer/payments'),
 
   // Admin / Accountant actions
   createCustomer: (data) => api.post('/admin/customers', data),
-  getCustomers: (search = '') => api.get(`/admin/customers?search=${encodeURIComponent(search)}`),
+  getCustomers: (search = '', scope = 'admin') =>
+    api.get(`/${scope}/customers?search=${encodeURIComponent(search)}`),
 };
 
 export default authApi;

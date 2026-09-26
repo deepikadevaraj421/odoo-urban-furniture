@@ -81,4 +81,51 @@ const authorizeAccountantType = (...allowedTypes) => {
   };
 };
 
-module.exports = { authorize, authorizeAccountantType };
+const { PERMISSION_DESCRIPTIONS } = require('../constants/permissions');
+
+/**
+ * Granular Permission Authorization Middleware
+ * 
+ * - ADMIN role automatically bypasses all permission checks (full access).
+ * - For ACCOUNTANT, checks whether user possesses the required permission(s).
+ * - If multiple permissions are passed, user must have at least one of them.
+ * - Returns 403 Forbidden with `{ success: false, message: "You do not have permission to <action>." }`
+ */
+const requirePermission = (...permissionKeys) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required.',
+      });
+    }
+
+    // Admin has full system access
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
+    if (req.user.role !== 'ACCOUNTANT') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Accountant role required.',
+      });
+    }
+
+    const userPerms = req.user.permissions || [];
+    const hasPerm = permissionKeys.some((key) => userPerms.includes(key));
+
+    if (!hasPerm) {
+      const primaryKey = permissionKeys[0];
+      const actionDesc = PERMISSION_DESCRIPTIONS[primaryKey] || primaryKey.toLowerCase().replace(/_/g, ' ');
+      return res.status(403).json({
+        success: false,
+        message: `You do not have permission to ${actionDesc}.`,
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = { authorize, authorizeAccountantType, requirePermission };

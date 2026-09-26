@@ -57,6 +57,14 @@ const authenticate = async (req, res, next) => {
         email: true,
         role: true,
         status: true,
+        accountant: {
+          select: {
+            id: true,
+            accountantCode: true,
+            accountantType: true,
+            permissions: true,
+          },
+        },
       },
     });
 
@@ -80,6 +88,10 @@ const authenticate = async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      accountantId: user.accountant?.id || null,
+      accountantCode: user.accountant?.accountantCode || null,
+      accountantType: user.accountant?.accountantType || null,
+      permissions: user.accountant?.permissions || [],
     };
 
     next();
