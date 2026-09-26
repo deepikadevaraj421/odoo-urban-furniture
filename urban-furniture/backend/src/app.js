@@ -39,7 +39,12 @@ const allowedOrigins = [
 ];
 
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  process.env.FRONTEND_URL.split(',').forEach((url) => {
+    const cleaned = url.trim().replace(/\/+$/, '');
+    if (cleaned && !allowedOrigins.includes(cleaned)) {
+      allowedOrigins.push(cleaned);
+    }
+  });
 }
 
 const corsOptions = {
